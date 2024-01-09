@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MultiStream Config</title>
+
+    <style>
+        .mb1 {
+            margin-bottom: 1em;
+        }
+    </style>
+</head>
+<body>
+<h1>MultiStream Configuration</h1>
+
+<fieldset>
+    <legend>Join Rooms</legend>
+    <div class="mb1">
+        <label>Room code: <input type="text" id="roomcode"></label>
+    </div>
+
+    <div>
+        <button data-client-join="0">Client 1</button>
+        <button data-client-join="1">Client 2</button>
+        <button data-client-join="2">Client 3</button>
+        <button data-client-join="3">Client 4</button>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>Number of Clients</legend>
+
+    <form id="countform">
+        <div class="mb1">
+            <label><input name="clients" type="radio" value="1" checked> 1</label>
+            <label><input name="clients" type="radio" value="2"> 2</label>
+            <label><input name="clients" type="radio" value="4"> 4</label>
+        </div>
+
+        <div>
+            <strong>Warning:</strong> changing the number of clients will cause them all to restart!
+        </div>
+        <div>
+            <button type="submit">Apply</button>
+        </div>
+    </form>
+</fieldset>
+
+<fieldset>
+    <legend>Window Resolution</legend>
+
+    <form id="resform">
+        <div class="mb1">
+            <input type="number" value="1920" max="2560" min="1280" name="width" step="2" title="Width">
+            x
+            <input type="number" value="1080" min="720" max="1440" name="height" step="2" title="Height">
+        </div>
+        <div>
+            <button type="submit">Apply</button>
+        </div>
+    </form>
+</fieldset>
+
+<fieldset>
+    <legend>Client Settings</legend>
+
+    <div>
+        <label><input type="checkbox"> Transparent background</label>
+    </div>
+    <div>
+        <label><input type="checkbox"> Hide spectator tools</label>
+    </div>
+    <div class="mb1">
+        <label><input type="checkbox"> Auto-save replays</label>
+    </div>
+
+    <div>
+        <button>Apply</button>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>Copy Configuration</legend>
+
+    <div class="mb1">You may copy your in-game config from one client to another to ensure a consistent appearance.
+    </div>
+</fieldset>
+
+<script>
+    function xyToFriendlyName(x, y, count) {
+        if (count === 2) {
+            return x === 0 ? "Left" : "Right";
+        } else {
+            if (x === 0) {
+                return y === 0 ? "Top Left" : "Bottom Left";
+            } else {
+                return y === 0 ? "Top Right" : "Bottom Right";
+            }
+        }
+    }
+
+    document.querySelector("#countform").addEventListener("submit", e => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const count = fd.get("clients");
+        config.setCount(parseInt(count) || 1);
+    });
+
+    document.querySelector("#resform").addEventListener("submit", e => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const width = Math.floor(fd.get("width") / 2) * 2;
+        const height = Math.floor(fd.get("height") / 2) * 2;
+        config.setResolution(width, height);
+    });
+
+    document.querySelectorAll("[data-client-join]").forEach(el => {
+        el.addEventListener("click", () => {
+            config.joinRoom(parseInt(el.dataset.clientJoin), document.querySelector("#roomcode").value.trim().toUpperCase());
+        });
+    });
+</script>
+</body>
+</html>

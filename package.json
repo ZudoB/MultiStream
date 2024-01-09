@@ -1,0 +1,12 @@
+{
+  "name": "multistream",
+  "version": "0.0.1",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron src/index.js"
+  },
+  "devDependencies": {
+    "electron": "^28.1.2"
+  }
+}
