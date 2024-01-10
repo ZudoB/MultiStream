@@ -83,6 +83,7 @@ function createView(x, y, nx, ny) {
 
 function createViews(count) {
     for (const {view} of clients) {
+        view.webContents.destroy();
         mainWin.removeBrowserView(view);
     }
 
@@ -211,6 +212,10 @@ app.whenReady().then(() => {
             contextIsolation: true,
             nativeWindowOpen: true
         }
+    });
+
+    mainWin.on("close", event => {
+        if (!quitting) event.preventDefault();
     });
 
     configWin.setMenuBarVisibility(false);
