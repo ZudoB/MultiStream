@@ -5,7 +5,7 @@ on: workflow_dispatch
 jobs:
   publish:
     name: Create release
-    runs-on: windows-latest
+    runs-on: [windows-latest, macos-latest, ubuntu-latest]
 
     permissions:
       contents: write
