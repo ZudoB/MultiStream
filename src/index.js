@@ -1,4 +1,4 @@
-const {app, BrowserWindow, BrowserView, ipcMain, dialog} = require("electron");
+const {app, BrowserWindow, BrowserView, ipcMain, dialog, shell} = require("electron");
 const {join} = require("path");
 const Store = require("electron-store");
 
@@ -38,7 +38,7 @@ function createView(x, y, nx, ny) {
         }
     });
 
-    view.webContents.openDevTools({mode: "undocked"});
+    // view.webContents.openDevTools({mode: "undocked"});
     view.webContents.loadURL("https://tetr.io");
 
     view.webContents.on("will-frame-navigate", e => {
@@ -55,7 +55,7 @@ function createView(x, y, nx, ny) {
 
     view.webContents.session.on("will-download", (e, item) => {
         if (item.getFilename().endsWith(".ttrm")) {
-            item.setSavePath(join(config.get("replaysdir"), `replay-${Date.now()}-${Math.floor(Math.random()*1000)}.ttrm`));
+            item.setSavePath(join(config.get("replaysdir"), `replay-${Date.now()}-${Math.floor(Math.random() * 1000)}.ttrm`));
         }
     });
 
@@ -180,6 +180,8 @@ ipcMain.on("set-config", (event, {key, value}) => {
     config.set(key, value);
 });
 
+let quitting = false;
+
 app.whenReady().then(() => {
     mainWin = new BrowserWindow({
         width: config.get("resolution.width"),
@@ -204,12 +206,44 @@ app.whenReady().then(() => {
         resizable: false,
         maximizable: false,
         webPreferences: {
-            preload: join(__dirname, "configpreload.js")
+            preload: join(__dirname, "configpreload.js"),
+            nodeIntegration: false,
+            contextIsolation: true,
+            nativeWindowOpen: true
         }
     });
 
     configWin.setMenuBarVisibility(false);
     configWin.webContents.loadFile(join(__dirname, "config.html"));
+
+    // handle window open by using browser
+    configWin.webContents.setWindowOpenHandler(({url}) => {
+        shell.openExternal(url);
+        return {action: "deny"};
+    });
+
+    configWin.on("close", event => {
+        if (quitting) return;
+
+        // confirm app quit
+        const res = dialog.showMessageBoxSync({
+            type: "question",
+            buttons: ["Quit", "Cancel"],
+            title: "Confirm",
+            message: "Are you sure you want to quit? All clients will be closed."
+        });
+
+        if (res === 1) {
+            event.preventDefault();
+        } else {
+            quitting = true;
+            for (const {view} of clients) {
+                mainWin.removeBrowserView(view);
+            }
+            mainWin.close();
+            app.quit();
+        }
+    });
 
     createViews(config.get("count"));
 });
