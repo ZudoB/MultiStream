@@ -1,6 +1,8 @@
 const {ipcRenderer} = require("electron/renderer");
 
 (async () => {
+    const getConfig = key => ipcRenderer.sendSync("get-config", key);
+
     ipcRenderer.on("join-room", (e, room) => {
         console.log(e, room);
         window.DEVHOOK_FAST_JOIN_ROOM(room);
@@ -15,9 +17,8 @@ const {ipcRenderer} = require("electron/renderer");
             return;
         }
 
-        if (isVisible && !wasLastVictoryScreenVisible) {
+        if (isVisible && !wasLastVictoryScreenVisible && getConfig("savereplays")) {
             wasLastVictoryScreenVisible = true;
-            console.log("triggering a replay download");
             document.getElementById("victory_downloadreplay").click();
         }
     });
@@ -151,27 +152,37 @@ const {ipcRenderer} = require("electron/renderer");
         });
     });
 
-    awaitSomething(() => document.getElementById("menus") && !document.getElementById("menus").classList.contains("hidden"), () => {
-        window.DEVHOOK_DISABLE_SPECTATOR_TOOLS();
-    });
+    if (getConfig("nospecbar")) {
+        awaitSomething(() => document.getElementById("menus") && !document.getElementById("menus").classList.contains("hidden"), () => {
+            window.DEVHOOK_DISABLE_SPECTATOR_TOOLS();
+        });
+    }
 
-    window.Image = new Proxy(window.Image, {
-        construct(target, args) {
-            let val = new target(...args);
+    if (getConfig("transparent")) {
+        window.Image = new Proxy(window.Image, {
+            construct(target, args) {
+                let val = new target(...args);
 
-            awaitSomething(() => val.src !== "", () => {
-                let backgroundURL = /\/res\/bg\/(\d+).jpg/.exec(val.src);
-                if (backgroundURL) {
-                    val.src = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ` +
-                        `AAAABmJLR0QAAAAAAAD5Q7t/AAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAB3RJTUUH5A` +
-                        `QWBjQ7z1871gAAAAtJREFUCNdjYAACAAAFAAHiJgWbAAAAAElFTkSuQmCC`;
+                awaitSomething(() => val.src !== "", () => {
+                    let backgroundURL = /\/res\/bg\/(\d+).jpg/.exec(val.src);
+                    if (backgroundURL) {
+                        val.src = `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ` +
+                            `AAAABmJLR0QAAAAAAAD5Q7t/AAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAB3RJTUUH5A` +
+                            `QWBjQ7z1871gAAAAtJREFUCNdjYAACAAAFAAHiJgWbAAAAAElFTkSuQmCC`;
 
-                }
-            });
+                    }
+                });
 
-            return val;
-        }
-    });
+                return val;
+            }
+        })
+    }
+
+    if (getConfig("skiplogin")) {
+        awaitSomething(() => document.getElementById("entry_form") && !document.getElementById("entry_form").classList.contains("hidden"), () => {
+            document.getElementById("entry_button").click();
+        });
+    }
 
 
     // if (!localStorage.getItem("userConfig")) {
@@ -179,8 +190,8 @@ const {ipcRenderer} = require("electron/renderer");
     // }
 
     window.onload = () => {
-        document.documentElement.style.backgroundColor = "transparent";
-        // DEVHOOK_DISABLE_SPECTATOR_TOOLS();
+        if (getConfig("transparent")) document.documentElement.style.backgroundColor = "transparent";
+        document.getElementById("multi_league").style.display = "none"; // prevent silliness
         document.body.classList.add("no_login_ceriad", "ceriad_disabled", "ceriad_exempt");
         autoDownloadObserver.observe(document.getElementById("victoryview"), {
             attributes: true,

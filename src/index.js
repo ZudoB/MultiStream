@@ -1,13 +1,27 @@
 const {app, BrowserWindow, BrowserView, ipcMain, dialog} = require("electron");
 const {join} = require("path");
+const Store = require("electron-store");
 
 let mainWin;
 let configWin;
 
-const W = 1920;
-const H = 1080;
+let clients = [];
 
-let views = [];
+const config = new Store({
+    defaults: {
+        count: 1,
+        resolution: {
+            width: 1920,
+            height: 1080
+        },
+        transparent: true,
+        nospecbar: true,
+        skiplogin: true,
+        savereplays: false,
+        replaysdir: join(app.getPath("documents"), "MultiStream Replays"),
+        css: "/* Custom CSS here will be added into each client */"
+    }
+});
 
 function createView(x, y, nx, ny) {
     const view = new BrowserView({
@@ -24,10 +38,15 @@ function createView(x, y, nx, ny) {
         }
     });
 
+    view.webContents.openDevTools({mode: "undocked"});
     view.webContents.loadURL("https://tetr.io");
 
     view.webContents.on("will-frame-navigate", e => {
-        e.preventDefault();
+        const url = new URL(e.url);
+
+        if (url.hostname !== "tetr.io" || url.pathname !== "/") {
+            e.preventDefault();
+        }
     });
 
     view.webContents.setWindowOpenHandler(() => {
@@ -36,8 +55,12 @@ function createView(x, y, nx, ny) {
 
     view.webContents.session.on("will-download", (e, item) => {
         if (item.getFilename().endsWith(".ttrm")) {
-            item.setSavePath(join(__dirname, `replay-${Date.now()}.ttrm`));
+            item.setSavePath(join(config.get("replaysdir"), `replay-${Date.now()}-${Math.floor(Math.random()*1000)}.ttrm`));
         }
+    });
+
+    view.webContents.on("did-finish-load", () => {
+        view.webContents.insertCSS(config.get("css"));
     });
 
     mainWin.addBrowserView(view);
@@ -55,15 +78,15 @@ function createView(x, y, nx, ny) {
     mainWin.on("resized", setSize);
     setSize();
 
-    views.push({view, setSize});
+    clients.push({view, setSize});
 }
 
 function createViews(count) {
-    for (const {view} of views) {
+    for (const {view} of clients) {
         mainWin.removeBrowserView(view);
     }
 
-    views = [];
+    clients = [];
 
     let nx = 1;
     let ny = 1;
@@ -98,6 +121,7 @@ app.commandLine.appendSwitch('--autoplay-policy', 'no-user-gesture-required');
 ipcMain.on("set-count", (event, count) => {
     if (!count) return;
     createViews(count);
+    config.set("count", count);
 });
 
 ipcMain.on("set-resolution", (event, {width, height}) => {
@@ -105,26 +129,61 @@ ipcMain.on("set-resolution", (event, {width, height}) => {
     mainWin.setResizable(true);
     mainWin.setSize(width, height);
     mainWin.setResizable(false);
-    for (const {setSize} of views) {
+    mainWin.center();
+    for (const {setSize} of clients) {
         setSize();
     }
+
+    config.set("resolution.width", width);
+    config.set("resolution.height", height);
 });
 
 ipcMain.on("join-room", (event, {client, room}) => {
     if (!room) return;
     const index = parseInt(client) || 0;
 
-    if (index >= views.length) {
+    if (index >= clients.length) {
         return dialog.showErrorBox("No such client", "You don't have enough active clients.");
     }
 
-    views[index].view.webContents.send("join-room", room);
+    clients[index].view.webContents.send("join-room", room);
+});
+
+ipcMain.on("reload-client", (event, client) => {
+    const index = parseInt(client) || 0;
+
+    if (index >= clients.length) {
+        return dialog.showErrorBox("No such client", "You don't have enough active clients.");
+    }
+
+    clients[index].view.webContents.reloadIgnoringCache();
+});
+
+ipcMain.on("set-save-folder", async event => {
+    const res = await dialog.showOpenDialog(configWin, {
+        title: "Where should replays be saved?",
+        properties: ["openDirectory"]
+    });
+
+    event.reply("save-folder-set", res.filePaths[0]);
+
+    if (res.filePaths[0]) {
+        config.set("replaysdir", res.filePaths[0]);
+    }
+});
+
+ipcMain.on("get-config", (event, key) => {
+    event.returnValue = config.get(key);
+});
+
+ipcMain.on("set-config", (event, {key, value}) => {
+    config.set(key, value);
 });
 
 app.whenReady().then(() => {
     mainWin = new BrowserWindow({
-        width: W,
-        height: H,
+        width: config.get("resolution.width"),
+        height: config.get("resolution.height"),
         useContentSize: true,
         resizable: false,
         maximizable: false,
@@ -139,6 +198,8 @@ app.whenReady().then(() => {
     mainWin.webContents.loadFile(join(__dirname, "background.html"));
 
     configWin = new BrowserWindow({
+        width: 600,
+        height: 800,
         title: "MultiStream Config",
         resizable: false,
         maximizable: false,
@@ -147,8 +208,8 @@ app.whenReady().then(() => {
         }
     });
 
-    // configWin.setMenu(null);
+    configWin.setMenuBarVisibility(false);
     configWin.webContents.loadFile(join(__dirname, "config.html"));
 
-    createViews(1);
+    createViews(config.get("count"));
 });

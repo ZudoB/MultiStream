@@ -5,10 +5,12 @@ tournaments.
 
 ## Setup
 
-Not sure yet. I'll get back to you on that one.
+Download the zip file from [releases](https://github.com/ZudoB/MultiStream/releases), then extract and run the program.
+Add the MultiStream window to OBS as a window capture.
 
 ## Credits
 
 Special shoutouts go to:
+
 * UniQMG for the transparent game background "hack"
 * AzuraHorizons for guidance and pioneering the quadstream format

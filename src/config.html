@@ -5,17 +5,19 @@
     <title>MultiStream Config</title>
 
     <style>
+        body {
+            font-family: system-ui, sans-serif;
+        }
+
         .mb1 {
             margin-bottom: 1em;
         }
     </style>
 </head>
 <body>
-<h1>MultiStream Configuration</h1>
-
 <fieldset>
     <legend>Join Rooms</legend>
-    <div class="mb1">
+    <div>
         <label>Room code: <input type="text" id="roomcode"></label>
     </div>
 
@@ -28,18 +30,25 @@
 </fieldset>
 
 <fieldset>
+    <legend>Reload Clients</legend>
+    <div>
+        <button data-client-reload="0">Client 1</button>
+        <button data-client-reload="1">Client 2</button>
+        <button data-client-reload="2">Client 3</button>
+        <button data-client-reload="3">Client 4</button>
+    </div>
+</fieldset>
+
+<fieldset>
     <legend>Number of Clients</legend>
 
     <form id="countform">
-        <div class="mb1">
-            <label><input name="clients" type="radio" value="1" checked> 1</label>
+        <div>
+            <label><input name="clients" type="radio" value="1"> 1</label>
             <label><input name="clients" type="radio" value="2"> 2</label>
             <label><input name="clients" type="radio" value="4"> 4</label>
         </div>
 
-        <div>
-            <strong>Warning:</strong> changing the number of clients will cause them all to restart!
-        </div>
         <div>
             <button type="submit">Apply</button>
         </div>
@@ -50,10 +59,10 @@
     <legend>Window Resolution</legend>
 
     <form id="resform">
-        <div class="mb1">
-            <input type="number" value="1920" max="2560" min="1280" name="width" step="2" title="Width">
+        <div>
+            <input type="number" max="2560" min="1280" name="width" step="2" title="Width">
             x
-            <input type="number" value="1080" min="720" max="1440" name="height" step="2" title="Height">
+            <input type="number" min="720" max="1440" name="height" step="2" title="Height">
         </div>
         <div>
             <button type="submit">Apply</button>
@@ -61,44 +70,78 @@
     </form>
 </fieldset>
 
+<p>Changes to the following settings will require a client reload to take effect.</p>
+
 <fieldset>
     <legend>Client Settings</legend>
 
     <div>
-        <label><input type="checkbox"> Transparent background</label>
+        <label><input type="checkbox" data-configtoggle="transparent"> Transparent background</label>
     </div>
     <div>
-        <label><input type="checkbox"> Hide spectator tools</label>
+        <label><input type="checkbox" data-configtoggle="nospec"> Hide spectator tools</label>
     </div>
-    <div class="mb1">
-        <label><input type="checkbox"> Auto-save replays</label>
-    </div>
-
     <div>
-        <button>Apply</button>
+        <label><input type="checkbox" data-configtoggle="skiplogin"> Attempt to skip the login screen</label>
     </div>
 </fieldset>
 
 <fieldset>
-    <legend>Copy Configuration</legend>
+    <legend>Auto-save replays</legend>
 
-    <div class="mb1">You may copy your in-game config from one client to another to ensure a consistent appearance.
+    <div class="mb1">
+        <label><input type="checkbox" data-configtoggle="savereplays"> Enable saving</label>
+    </div>
+
+    <div>
+        Replays will be saved to:<br><strong id="replays-dir"></strong>
+    </div>
+
+    <div>
+        <button id="replays-setdir">Change folder</button>
     </div>
 </fieldset>
 
-<script>
-    function xyToFriendlyName(x, y, count) {
-        if (count === 2) {
-            return x === 0 ? "Left" : "Right";
-        } else {
-            if (x === 0) {
-                return y === 0 ? "Top Left" : "Bottom Left";
-            } else {
-                return y === 0 ? "Top Right" : "Bottom Right";
-            }
-        }
-    }
+<!--<fieldset>-->
+<!--    <legend>Copy Configuration</legend>-->
 
+<!--    <div class="mb1">-->
+<!--        You may copy your in-game config from one client to another to ensure a consistent appearance.-->
+<!--    </div>-->
+
+<!--    <div class="mb1">-->
+<!--        From:-->
+<!--        <button data-client-join="0">Client 1</button>-->
+<!--        <button data-client-join="1">Client 2</button>-->
+<!--        <button data-client-join="2">Client 3</button>-->
+<!--        <button data-client-join="3">Client 4</button>-->
+<!--    </div>-->
+<!--</fieldset>-->
+
+<fieldset>
+    <legend>Custom CSS</legend>
+
+    <form id="cssform">
+        <textarea rows="10" style="width: 100%; resize: none" name="css" title="Custom CSS"></textarea>
+
+        <div>
+            <button type="submit">Save CSS</button>
+        </div>
+    </form>
+</fieldset>
+
+<div>
+    <h2>MultiStream</h2>
+
+    <p>A simple application that allows you to have 1, 2 or 4 concurrent TETR.IO clients in one window. Perfect for
+        hosting tournaments.</p>
+
+    <p>
+        <a href="https://github.com/ZudoB/MultiStream" target="_blank">GitHub</a>
+    </p>
+</div>
+
+<script>
     document.querySelector("#countform").addEventListener("submit", e => {
         e.preventDefault();
         const fd = new FormData(e.target);
@@ -117,6 +160,56 @@
     document.querySelectorAll("[data-client-join]").forEach(el => {
         el.addEventListener("click", () => {
             config.joinRoom(parseInt(el.dataset.clientJoin), document.querySelector("#roomcode").value.trim().toUpperCase());
+        });
+    });
+
+    document.querySelectorAll("[data-client-reload]").forEach(el => {
+        el.addEventListener("click", () => {
+            config.reloadClient(parseInt(el.dataset.clientReload));
+        });
+    });
+
+    const initialClients = config.getConfig("count");
+    document.querySelectorAll("[name=clients]").forEach(el => {
+        if (parseInt(el.value) === initialClients) el.checked = true;
+    });
+
+    document.querySelector("[name=width]").value = config.getConfig("resolution.width");
+    document.querySelector("[name=height]").value = config.getConfig("resolution.height");
+    document.querySelector("#replays-dir").innerText = config.getConfig("replaysdir");
+
+    document.querySelector("[name=css]").value = config.getConfig("css");
+    document.querySelector("#cssform").addEventListener("submit", e => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+
+        config.setConfig("css", fd.get("css"));
+    });
+
+    document.querySelector("[name=css]").addEventListener("keydown", e => {
+        if (e.key === "Tab") {
+            e.preventDefault();
+            const start = e.target.selectionStart;
+            const end = e.target.selectionEnd;
+
+            document.querySelector("[name=css]").setRangeText("\t", start, end, "end");
+        }
+    })
+
+    document.querySelector("#replays-setdir").addEventListener("click", async () => {
+        const dir = await config.selectReplayDir();
+        if (dir) {
+            document.querySelector("#replays-dir").innerText = dir;
+        }
+    });
+
+    document.querySelectorAll("[data-configtoggle]").forEach(el => {
+        if (config.getConfig(el.dataset.configtoggle)) {
+            el.checked = true;
+        }
+
+        el.addEventListener("change", () => {
+            config.setConfig(el.dataset.configtoggle, el.checked);
         });
     });
 </script>
