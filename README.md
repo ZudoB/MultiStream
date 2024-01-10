@@ -8,6 +8,10 @@ tournaments.
 Download the zip file from [releases](https://github.com/ZudoB/MultiStream/releases), then extract and run the program.
 Add the MultiStream window to OBS as a window capture.
 
+## Help and Feedback
+
+Found a bug? Please open an issue, or send me a ping on [Discord](https://discord.gg/6uxu7YmCWP).
+
 ## Credits
 
 Special shoutouts go to:
