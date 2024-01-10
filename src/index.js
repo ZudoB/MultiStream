@@ -210,9 +210,7 @@ ipcMain.on("get-screens", event => {
     });
 });
 
-let quitting = false;
-
-app.whenReady().then(() => {
+function setup() {
     mainWin = new BrowserWindow({
         width: config.get("resolution.width"),
         height: config.get("resolution.height"),
@@ -280,4 +278,14 @@ app.whenReady().then(() => {
     });
 
     createViews(config.get("count"));
+}
+
+let quitting = false;
+
+app.whenReady().then(() => {
+    if (!app.requestSingleInstanceLock()) {
+        app.quit();
+    } else {
+        setup();
+    }
 });
