@@ -185,14 +185,15 @@ const {ipcRenderer} = require("electron/renderer");
     }
 
 
-    // if (!localStorage.getItem("userConfig")) {
-    localStorage.setItem("userConfig", JSON.stringify(CONFIG));
-    // }
+    // set default config values
+    if (!localStorage.getItem("userConfig")) {
+        localStorage.setItem("userConfig", JSON.stringify(CONFIG));
+    }
 
     window.onload = () => {
         if (getConfig("transparent")) document.documentElement.style.backgroundColor = "transparent";
         document.getElementById("multi_league").style.display = "none"; // prevent silliness
-        document.body.classList.add("no_login_ceriad", "ceriad_disabled", "ceriad_exempt");
+        // document.body.classList.add("no_login_ceriad", "ceriad_disabled", "ceriad_exempt");
         autoDownloadObserver.observe(document.getElementById("victoryview"), {
             attributes: true,
             attributeFilter: ["class"]

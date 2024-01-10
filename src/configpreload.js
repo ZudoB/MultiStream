@@ -12,5 +12,6 @@ contextBridge.exposeInMainWorld("config", {
             ipcRenderer.once("save-folder-set", (e, dir) => resolve(dir));
             ipcRenderer.send("set-save-folder");
         });
-    }
+    },
+    getScreens: () => ipcRenderer.sendSync("get-screens"),
 })

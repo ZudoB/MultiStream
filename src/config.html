@@ -56,10 +56,15 @@
 </fieldset>
 
 <fieldset>
-    <legend>Window Resolution</legend>
+    <legend>Display and Resolution</legend>
 
     <form id="resform">
         <div>
+            Display:
+            <select name="display" title="Select display"></select>
+        </div>
+        <div class="mb1">
+            Resolution:
             <input type="number" max="2560" min="1280" name="width" step="2" title="Width">
             x
             <input type="number" min="720" max="1440" name="height" step="2" title="Height">
@@ -75,6 +80,9 @@
 <fieldset>
     <legend>Client Settings</legend>
 
+    <div>
+        <label><input type="checkbox" data-configtoggle="blockads"> Block ads from loading</label>
+    </div>
     <div>
         <label><input type="checkbox" data-configtoggle="transparent"> Transparent background</label>
     </div>
@@ -155,7 +163,7 @@
         const fd = new FormData(e.target);
         const width = Math.floor(fd.get("width") / 2) * 2;
         const height = Math.floor(fd.get("height") / 2) * 2;
-        config.setResolution(width, height);
+        config.setResolution(width, height, fd.get("display"));
     });
 
     document.querySelectorAll("[data-client-join]").forEach(el => {
@@ -213,6 +221,14 @@
             config.setConfig(el.dataset.configtoggle, el.checked);
         });
     });
+
+    const screens = config.getScreens();
+    for (let i = 0; i < screens.length; i++) {
+        const option = document.createElement("option");
+        option.innerText = `${i + 1} - ${screens[i].label} (${screens[i].bounds.width} x ${screens[i].bounds.height})`;
+        option.value = screens[i].id;
+        document.querySelector("[name=display]").appendChild(option);
+    }
 </script>
 </body>
 </html>

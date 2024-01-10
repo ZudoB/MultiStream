@@ -1,4 +1,4 @@
-const {app, BrowserWindow, BrowserView, ipcMain, dialog, shell} = require("electron");
+const {app, BrowserWindow, BrowserView, ipcMain, dialog, shell, screen} = require("electron");
 const {join} = require("path");
 const Store = require("electron-store");
 
@@ -17,6 +17,7 @@ const config = new Store({
         transparent: true,
         nospecbar: true,
         skiplogin: true,
+        blockads: true,
         savereplays: false,
         replaysdir: join(app.getPath("documents"), "MultiStream Replays"),
         css: "/* Custom CSS here will be added into each client */"
@@ -49,18 +50,28 @@ function createView(x, y, nx, ny) {
         }
     });
 
+    // block window opens
     view.webContents.setWindowOpenHandler(() => {
         return {action: "deny"};
     });
 
+    // if a replay is downloaded, intercept and save
     view.webContents.session.on("will-download", (e, item) => {
         if (item.getFilename().endsWith(".ttrm")) {
             item.setSavePath(join(config.get("replaysdir"), `replay-${Date.now()}-${Math.floor(Math.random() * 1000)}.ttrm`));
         }
     });
 
+    // inject custom css
     view.webContents.on("did-finish-load", () => {
         view.webContents.insertCSS(config.get("css"));
+    });
+
+    // block enthusiast gaming ad network
+    view.webContents.session.webRequest.onBeforeSendHeaders({
+        urls: ["*://*.enthusiastgaming.net/*"]
+    }, (details, callback) => {
+        callback({cancel: config.get("blockads")});
     });
 
     mainWin.addBrowserView(view);
@@ -125,12 +136,20 @@ ipcMain.on("set-count", (event, count) => {
     config.set("count", count);
 });
 
-ipcMain.on("set-resolution", (event, {width, height}) => {
+ipcMain.on("set-resolution", (event, {width, height, display}) => {
     if (!width || !height) return;
+
+    const chosenDisplay = screen.getAllDisplays().find(d => d.id === display);
+
+    if (chosenDisplay) {
+        mainWin.setBounds(chosenDisplay.bounds);
+    }
+
     mainWin.setResizable(true);
     mainWin.setSize(width, height);
     mainWin.setResizable(false);
     mainWin.center();
+
     for (const {setSize} of clients) {
         setSize();
     }
@@ -179,6 +198,16 @@ ipcMain.on("get-config", (event, key) => {
 
 ipcMain.on("set-config", (event, {key, value}) => {
     config.set(key, value);
+});
+
+ipcMain.on("get-screens", event => {
+    event.returnValue = screen.getAllDisplays().map(display => {
+        return {
+            id: display.id,
+            label: display.label,
+            bounds: display.bounds,
+        };
+    });
 });
 
 let quitting = false;
