@@ -27,3 +27,5 @@ jobs:
         run: yarn --frozen-lockfile
       - name: Make and publish
         run: yarn run release
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
