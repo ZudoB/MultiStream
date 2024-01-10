@@ -7,6 +7,11 @@ jobs:
     name: Create release
     runs-on: windows-latest
 
+    permissions:
+      contents: write
+      packages: write
+      actions: write
+
     strategy:
       matrix:
         node-version: [ 20.x ]
