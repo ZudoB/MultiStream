@@ -110,6 +110,16 @@
     </div>
 </fieldset>
 
+<fieldset>
+    <legend>Window Frame</legend>
+
+    <div class="mb1">You may enable or disable the window frame. Turning it on will make it easier to move the game
+        window, but you won't be able to use transparency effects. <strong>The application must be completely restarted
+            for this setting to take effect.</strong></div>
+
+    <div><label><input type="checkbox" data-configtoggle="frame"> Show the window frame</label></div>
+</fieldset>
+
 <!--<fieldset>-->
 <!--    <legend>Copy Configuration</legend>-->
 
@@ -228,6 +238,10 @@
         option.innerText = `${i + 1} - ${screens[i].label} (${screens[i].bounds.width} x ${screens[i].bounds.height})`;
         option.value = screens[i].id;
         document.querySelector("[name=display]").appendChild(option);
+    }
+
+    if (config.getConfig("resolution.display")) {
+        document.querySelector("[name=display]").value = config.getConfig("resolution.display");
     }
 </script>
 </body>

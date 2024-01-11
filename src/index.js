@@ -12,8 +12,10 @@ const config = new Store({
         count: 1,
         resolution: {
             width: 1920,
-            height: 1080
+            height: 1080,
+            display: undefined
         },
+        frame: false,
         transparent: true,
         nospecbar: true,
         skiplogin: true,
@@ -130,6 +132,18 @@ app.commandLine.appendSwitch('--enable-zero-copy');
 app.commandLine.appendSwitch('--ignore-gpu-blacklist');
 app.commandLine.appendSwitch('--autoplay-policy', 'no-user-gesture-required');
 
+function moveMainWinToDisplay(display, width, height) {
+    const chosenDisplay = screen.getAllDisplays().find(d => d.id === parseInt(display));
+
+    if (chosenDisplay) {
+        mainWin.setBounds(chosenDisplay.bounds);
+        mainWin.setResizable(true);
+        mainWin.setSize(width, height);
+        mainWin.setResizable(false);
+        mainWin.center();
+    }
+}
+
 ipcMain.on("set-count", (event, count) => {
     if (!count) return;
     createViews(count);
@@ -139,16 +153,7 @@ ipcMain.on("set-count", (event, count) => {
 ipcMain.on("set-resolution", (event, {width, height, display}) => {
     if (!width || !height) return;
 
-    const chosenDisplay = screen.getAllDisplays().find(d => d.id === display);
-
-    if (chosenDisplay) {
-        mainWin.setBounds(chosenDisplay.bounds);
-    }
-
-    mainWin.setResizable(true);
-    mainWin.setSize(width, height);
-    mainWin.setResizable(false);
-    mainWin.center();
+    moveMainWinToDisplay(display, width, height);
 
     for (const {setSize} of clients) {
         setSize();
@@ -156,6 +161,7 @@ ipcMain.on("set-resolution", (event, {width, height, display}) => {
 
     config.set("resolution.width", width);
     config.set("resolution.height", height);
+    config.set("resolution.display", display);
 });
 
 ipcMain.on("join-room", (event, {client, room}) => {
@@ -212,20 +218,22 @@ ipcMain.on("get-screens", event => {
 
 function setup() {
     mainWin = new BrowserWindow({
-        width: config.get("resolution.width"),
-        height: config.get("resolution.height"),
         useContentSize: true,
         resizable: false,
         maximizable: false,
         minimizable: false,
+        closable: false,
         transparent: true,
-        frame: false,
         title: "MultiStream",
-        center: true
+        center: true,
+        frame: config.get("frame"),
+        show: false
     });
+
 
     mainWin.setMenu(null);
     mainWin.webContents.loadFile(join(__dirname, "background.html"));
+    moveMainWinToDisplay(config.get("resolution.display"), config.get("resolution.width"), config.get("resolution.height"));
 
     configWin = new BrowserWindow({
         width: 600,
@@ -233,6 +241,7 @@ function setup() {
         title: "MultiStream Config",
         resizable: false,
         maximizable: false,
+        show: false,
         webPreferences: {
             preload: join(__dirname, "configpreload.js"),
             nodeIntegration: false,
@@ -243,6 +252,10 @@ function setup() {
 
     mainWin.on("close", event => {
         if (!quitting) event.preventDefault();
+    });
+
+    mainWin.on("ready-to-show", () => {
+        mainWin.show();
     });
 
     configWin.setMenuBarVisibility(false);
@@ -269,12 +282,17 @@ function setup() {
             event.preventDefault();
         } else {
             quitting = true;
+            mainWin.setClosable(true);
             for (const {view} of clients) {
                 mainWin.removeBrowserView(view);
             }
             mainWin.close();
             app.quit();
         }
+    });
+
+    configWin.on("ready-to-show", () => {
+        configWin.show();
     });
 
     createViews(config.get("count"));
