@@ -16,7 +16,7 @@
 </head>
 <body>
 <fieldset>
-    <legend>Join Rooms</legend>
+    <legend>Join Room</legend>
     <div>
         <label>Room code: <input type="text" id="roomcode"></label>
     </div>
@@ -26,6 +26,21 @@
         <button data-client-join="1">Client 2</button>
         <button data-client-join="2">Client 3</button>
         <button data-client-join="3">Client 4</button>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>Load Replay</legend>
+
+    <div>
+        <input type="file" accept=".ttr,.ttrm">
+    </div>
+
+    <div>
+        <button data-client-replay="0">Client 1</button>
+        <button data-client-replay="1">Client 2</button>
+        <button data-client-replay="2">Client 3</button>
+        <button data-client-replay="3">Client 4</button>
     </div>
 </fieldset>
 
@@ -81,16 +96,29 @@
     <legend>Client Settings</legend>
 
     <div>
-        <label><input type="checkbox" data-configtoggle="blockads"> Block ads from loading</label>
+        <label title="Kills off all requests to Enthusiast Gaming. This also avoids their cookie consent prompt.">
+            <input type="checkbox" data-configtoggle="blockads"> Block ads from loading
+        </label>
     </div>
     <div>
-        <label><input type="checkbox" data-configtoggle="transparent"> Transparent background</label>
+        <label title="Makes the game background transparent, rather than having an image there.">
+            <input type="checkbox" data-configtoggle="transparent"> Transparent background
+        </label>
     </div>
     <div>
-        <label><input type="checkbox" data-configtoggle="nospecbar"> Hide spectator tools</label>
+        <label title="Disables the LIVE bar at the top of the screen when spectating multiplayer.">
+            <input type="checkbox" data-configtoggle="nospecbar"> Hide spectator tools
+        </label>
     </div>
     <div>
-        <label><input type="checkbox" data-configtoggle="skiplogin"> Attempt to skip the login screen</label>
+        <label title="Automatically logs you in as a guest. You may still have to solve a CAPTCHA.">
+            <input type="checkbox" data-configtoggle="skiplogin"> Attempt to skip the login screen
+        </label>
+    </div>
+    <div>
+        <label title="Disables modifications to the game code. This will break some MultiStream features, so only use it if the game won't start otherwise. ">
+                <input type="checkbox" data-configtoggle="nointercept"> Compatibility mode
+        </label>
     </div>
 </fieldset>
 
@@ -185,6 +213,23 @@
     document.querySelectorAll("[data-client-reload]").forEach(el => {
         el.addEventListener("click", () => {
             config.reloadClient(parseInt(el.dataset.clientReload));
+        });
+    });
+
+    document.querySelectorAll("[data-client-replay]").forEach(el => {
+        el.addEventListener("click", () => {
+            const file = document.querySelector("input[type=file]").files[0];
+            if (!file) return;
+
+            const fr = new FileReader();
+
+            fr.addEventListener("load", () => {
+                const replay = JSON.parse(fr.result);
+
+                config.loadReplay(parseInt(el.dataset.clientReplay), replay);
+            });
+
+            fr.readAsText(file);
         });
     });
 

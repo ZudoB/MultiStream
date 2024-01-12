@@ -4,8 +4,15 @@ const {ipcRenderer} = require("electron/renderer");
     const getConfig = key => ipcRenderer.sendSync("get-config", key);
 
     ipcRenderer.on("join-room", (e, room) => {
-        console.log(e, room);
         window.DEVHOOK_FAST_JOIN_ROOM(room);
+    });
+
+    ipcRenderer.on("load-replay", (e, content) => {
+        if (content.ismulti) {
+            window.DEVHOOK_MS_MULTILOG(content);
+            return;
+        }
+        window.DEVHOOK_LOAD_REPLAY_RAW(content);
     });
 
     let wasLastVictoryScreenVisible = false;

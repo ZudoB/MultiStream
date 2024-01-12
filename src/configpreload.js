@@ -14,4 +14,5 @@ contextBridge.exposeInMainWorld("config", {
         });
     },
     getScreens: () => ipcRenderer.sendSync("get-screens"),
+    loadReplay: (client, content) => ipcRenderer.send("load-replay", {client, content}),
 })

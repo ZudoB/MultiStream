@@ -1,6 +1,7 @@
-const {app, BrowserWindow, BrowserView, ipcMain, dialog, shell, screen} = require("electron");
+const {app, BrowserWindow, BrowserView, ipcMain, dialog, shell, screen, net} = require("electron");
 const {join} = require("path");
 const Store = require("electron-store");
+const {doJSModification} = require("./intercept");
 
 let mainWin;
 let configWin;
@@ -21,6 +22,7 @@ const config = new Store({
         skiplogin: true,
         blockads: true,
         savereplays: false,
+        nointercept: false,
         replaysdir: join(app.getPath("documents"), "MultiStream Replays"),
         css: "/* Custom CSS here will be added into each client */"
     }
@@ -41,7 +43,7 @@ function createView(x, y, nx, ny) {
         }
     });
 
-    // view.webContents.openDevTools({mode: "undocked"});
+    view.webContents.openDevTools({mode: "undocked"});
     view.webContents.loadURL("https://tetr.io");
 
     view.webContents.on("will-frame-navigate", e => {
@@ -74,6 +76,29 @@ function createView(x, y, nx, ny) {
         urls: ["*://*.enthusiastgaming.net/*"]
     }, (details, callback) => {
         callback({cancel: config.get("blockads")});
+    });
+
+    if (view.webContents.session.protocol.isProtocolHandled("multistream")) {
+        view.webContents.session.protocol.unhandle("multistream");
+    }
+
+    view.webContents.session.protocol.handle("multistream", async () => {
+        const tetriojs = await net.fetch("https://tetr.io/js/tetrio.js");
+        const text = await tetriojs.text();
+        const newtext = await doJSModification(text);
+
+        return new Response(newtext, {
+            headers: {
+                "Content-Type": "application/javascript"
+            }
+        })
+    });
+
+    view.webContents.session.webRequest.onBeforeRequest({
+        urls: ["*://*.tetr.io/js/tetrio.js*"]
+    }, (details, callback) => {
+        if (config.get("nointercept")) return callback({cancel: false});
+        callback({redirectURL: "multistream://tetrio.js"});
     });
 
     mainWin.addBrowserView(view);
@@ -214,6 +239,16 @@ ipcMain.on("get-screens", event => {
             bounds: display.bounds,
         };
     });
+});
+
+ipcMain.on("load-replay", (event, {client, content}) => {
+    const index = parseInt(client) || 0;
+
+    if (index >= clients.length) {
+        return dialog.showErrorBox("No such client", "You don't have enough active clients.");
+    }
+
+    clients[index].view.webContents.send("load-replay", content);
 });
 
 function setup() {
