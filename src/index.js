@@ -23,6 +23,7 @@ const config = new Store({
         blockads: true,
         savereplays: false,
         nointercept: false,
+        devtools: false,
         replaysdir: join(app.getPath("documents"), "MultiStream Replays"),
         css: "/* Custom CSS here will be added into each client */"
     }
@@ -43,8 +44,9 @@ function createView(x, y, nx, ny) {
         }
     });
 
-    view.webContents.openDevTools({mode: "undocked"});
     view.webContents.loadURL("https://tetr.io");
+
+    if (config.get("devtools")) view.webContents.openDevTools({mode: "undocked"});
 
     view.webContents.on("will-frame-navigate", e => {
         const url = new URL(e.url);
@@ -121,6 +123,7 @@ function createView(x, y, nx, ny) {
 
 function createViews(count) {
     for (const {view} of clients) {
+        view.webContents.closeDevTools();
         view.webContents.destroy();
         mainWin.removeBrowserView(view);
     }
