@@ -161,15 +161,17 @@ app.commandLine.appendSwitch('--ignore-gpu-blacklist');
 app.commandLine.appendSwitch('--autoplay-policy', 'no-user-gesture-required');
 
 function moveMainWinToDisplay(display, width, height) {
+    mainWin.setResizable(true);
+
     const chosenDisplay = screen.getAllDisplays().find(d => d.id === parseInt(display));
 
     if (chosenDisplay) {
         mainWin.setBounds(chosenDisplay.bounds);
-        mainWin.setResizable(true);
-        mainWin.setSize(width, height);
-        mainWin.setResizable(false);
-        mainWin.center();
     }
+
+    mainWin.setSize(width, height);
+    mainWin.setResizable(false);
+    mainWin.center();
 }
 
 ipcMain.on("set-count", (event, count) => {
