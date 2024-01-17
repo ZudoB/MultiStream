@@ -12,6 +12,45 @@
         .mb1 {
             margin-bottom: 1em;
         }
+
+        .layouts {
+            display: flex;
+            justify-content: space-evenly;
+            flex-wrap: wrap;
+        }
+
+        .layout {
+            display: inline-grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            grid-gap: 2px;
+            width: 6em;
+            height: 4em;
+            padding: 0.5em;
+            user-select: none;
+            cursor: pointer;
+        }
+
+        /*noinspection CssUnusedSymbol*/
+        .layout.active {
+            background-color: #ccc;
+        }
+
+        .layout > * {
+            border: 1px solid black;
+            border-collapse: collapse;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .layout > .double-height {
+            grid-row: span 2;
+        }
+
+        .layout > .double-width {
+            grid-column: span 2;
+        }
     </style>
 </head>
 <body>
@@ -55,19 +94,58 @@
 </fieldset>
 
 <fieldset>
-    <legend>Number of Clients</legend>
+    <legend>Client Layout</legend>
 
-    <form id="countform">
-        <div>
-            <label><input name="clients" type="radio" value="1"> 1</label>
-            <label><input name="clients" type="radio" value="2"> 2</label>
-            <label><input name="clients" type="radio" value="4"> 4</label>
+    <div class="layouts">
+        <div class="layout" data-setlayout="1x1">
+            <div class="double-width double-height">1</div>
         </div>
 
-        <div>
-            <button type="submit">Apply</button>
+        <div class="layout" data-setlayout="2x1">
+            <div class="double-height">1</div>
+            <div class="double-height">2</div>
         </div>
-    </form>
+
+        <div class="layout" data-setlayout="1x2">
+            <div class="double-width">1</div>
+            <div class="double-width">2</div>
+        </div>
+
+        <div class="layout" data-setlayout="2x2">
+            <div>1</div>
+            <div>2</div>
+            <div>3</div>
+            <div>4</div>
+        </div>
+
+    </div>
+
+    <div class="layouts">
+        <div class="layout" data-setlayout="1L-2R">
+            <div class="double-height">1</div>
+            <div>2</div>
+            <div>3</div>
+        </div>
+
+        <div class="layout" data-setlayout="2L-1R">
+            <div>1</div>
+            <div class="double-height">2</div>
+            <div>3</div>
+        </div>
+
+        <div class="layout" data-setlayout="2T-1B">
+            <div>1</div>
+            <div>2</div>
+            <div class="double-width">3</div>
+        </div>
+
+        <div class="layout" data-setlayout="1T-2B">
+            <div class="double-width">1</div>
+            <div>2</div>
+            <div>3</div>
+        </div>
+
+    </div>
 </fieldset>
 
 <fieldset>
@@ -117,7 +195,7 @@
     </div>
     <div>
         <label title="Disables modifications to the game code. This will break some MultiStream features, so only use it if the game won't start otherwise. ">
-                <input type="checkbox" data-configtoggle="nointercept"> Compatibility mode
+            <input type="checkbox" data-configtoggle="nointercept"> Compatibility mode
         </label>
     </div>
 </fieldset>
@@ -179,7 +257,7 @@
 <div>
     <h2>MultiStream</h2>
 
-    <p>A simple application that allows you to have 1, 2 or 4 concurrent TETR.IO clients in one window. Perfect for
+    <p>A simple application that allows you to have up to four concurrent TETR.IO clients in one window. Perfect for
         hosting tournaments.</p>
 
     <ul>
@@ -195,12 +273,12 @@
 </fieldset>
 
 <script>
-    document.querySelector("#countform").addEventListener("submit", e => {
-        e.preventDefault();
-        const fd = new FormData(e.target);
-        const count = fd.get("clients");
-        config.setCount(parseInt(count) || 1);
-    });
+    // document.querySelector("#countform").addEventListener("submit", e => {
+    //     e.preventDefault();
+    //     const fd = new FormData(e.target);
+    //     const count = fd.get("clients");
+    //     config.setCount(parseInt(count) || 1);
+    // });
 
     document.querySelector("#resform").addEventListener("submit", e => {
         e.preventDefault();
@@ -239,11 +317,6 @@
         });
     });
 
-    const initialClients = config.getConfig("count");
-    document.querySelectorAll("[name=clients]").forEach(el => {
-        if (parseInt(el.value) === initialClients) el.checked = true;
-    });
-
     document.querySelector("[name=width]").value = config.getConfig("resolution.width");
     document.querySelector("[name=height]").value = config.getConfig("resolution.height");
     document.querySelector("#replays-dir").innerText = config.getConfig("replaysdir");
@@ -280,6 +353,24 @@
 
         el.addEventListener("change", () => {
             config.setConfig(el.dataset.configtoggle, el.checked);
+        });
+    });
+
+    document.querySelectorAll("[data-setlayout]").forEach(el => {
+        if (config.getConfig("layout") === el.dataset.setlayout) {
+            el.classList.add("active");
+        }
+
+        el.addEventListener("click", () => {
+            document.querySelectorAll("[data-setlayout]").forEach(el => {
+                el.classList.remove("active");
+            });
+
+            el.classList.add("active");
+
+            console.log(el.dataset.setlayout);
+
+            config.setLayout(el.dataset.setlayout);
         });
     });
 

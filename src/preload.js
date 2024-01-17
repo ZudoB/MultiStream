@@ -9,7 +9,7 @@ const {ipcRenderer} = require("electron/renderer");
 
     ipcRenderer.on("load-replay", (e, content) => {
         if (content.ismulti) {
-            window.DEVHOOK_MS_MULTILOG(content);
+            window.DEVHOOK_MS_*MULTILOG(content);
             return;
         }
         window.DEVHOOK_LOAD_REPLAY_RAW(content);

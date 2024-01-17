@@ -6,11 +6,9 @@ const {doJSModification} = require("./intercept");
 let mainWin;
 let configWin;
 
-let clients = [];
-
 const config = new Store({
     defaults: {
-        count: 1,
+        layout: "1x1",
         resolution: {
             width: 1920,
             height: 1080,
@@ -29,11 +27,11 @@ const config = new Store({
     }
 });
 
-function createView(x, y, nx, ny) {
+function createView(index) {
     const view = new BrowserView({
         webPreferences: {
             preload: join(__dirname, "preload.js"),
-            partition: `persist:partition-${x}-${y}`,
+            partition: `persist:partition-${index}`,
             nodeIntegration: false,
             nodeIntegrationInSubFrames: false,
             enableRemoteModule: false,
@@ -105,49 +103,62 @@ function createView(x, y, nx, ny) {
 
     mainWin.addBrowserView(view);
 
-    function setSize() {
+    function setSize(x, y, width, height) {
         const [w, h] = mainWin.getContentSize();
+
+        const baseWidth = Math.floor(w / 2);
+        const baseHeight = Math.floor(h / 2);
+
+        const baseX = x * baseWidth;
+        const baseY = y * baseHeight;
+
         view.setBounds({
-            x: Math.floor(x * (w / nx)),
-            y: Math.floor(y * (h / ny)),
-            width: Math.floor(w / nx),
-            height: Math.floor(h / ny)
+            x: baseX,
+            y: baseY,
+            width: baseWidth * width,
+            height: baseHeight * height
         });
     }
 
-    mainWin.on("resized", setSize);
-    setSize();
-
-    clients.push({view, setSize});
+    return {view, setSize};
 }
 
-function createViews(count) {
+let clients = [];
+
+const LAYOUTS = {
+    "1x1": [[0, 0, 2, 2]],
+    "1x2": [[0, 0, 2, 1], [0, 1, 2, 1]],
+    "2x1": [[0, 0, 1, 2], [1, 0, 1, 2]],
+    "1L-2R": [[0, 0, 1, 2], [1, 0, 1, 1], [1, 1, 1, 1]],
+    "2L-1R": [[0, 0, 1, 1], [1, 0, 1, 2], [0, 1, 1, 1]],
+    "1T-2B": [[0, 0, 2, 1], [0, 1, 1, 1], [1, 1, 1, 1]],
+    "2T-1B": [[0, 0, 1, 1], [1, 0, 1, 1], [0, 1, 2, 1]],
+    "2x2": [[0, 0, 1, 1], [1, 0, 1, 1], [0, 1, 1, 1], [1, 1, 1, 1]]
+};
+
+function createViews() {
+    for (let i = 0; i < 4; i++) {
+        const client = createView(i);
+        client.setSize(i % 2, Math.floor(i / 2), 1, 1);
+        clients.push(client);
+    }
+}
+
+function applyLayout() {
+    const layoutData = LAYOUTS[config.get("layout")];
+
+    if (!layoutData) return;
+
     for (const {view} of clients) {
-        view.webContents.closeDevTools();
-        view.webContents.destroy();
-        mainWin.removeBrowserView(view);
+        view.setBounds({x: 0, y: 0, width: 0, height: 0});
     }
 
-    clients = [];
-
-    let nx = 1;
-    let ny = 1;
-
-    switch (count) {
-        case 4:
-            nx = 2;
-            ny = 2;
-            break;
-        case 2:
-            nx = 2;
-            break;
+    for (let i = 0; i < layoutData.length; i++) {
+        if (!clients[i]) break;
+        mainWin.addBrowserView(clients[i].view);
+        clients[i].setSize(...layoutData[i]);
     }
 
-    for (let y = 0; y < ny; y++) {
-        for (let x = 0; x < nx; x++) {
-            createView(x, y, nx, ny);
-        }
-    }
 }
 
 app.commandLine.appendSwitch('--disable-gpu-sandbox');
@@ -172,26 +183,19 @@ function moveMainWinToDisplay(display, width, height) {
     mainWin.setSize(width, height);
     mainWin.setResizable(false);
     mainWin.center();
+    applyLayout();
 }
-
-ipcMain.on("set-count", (event, count) => {
-    if (!count) return;
-    createViews(count);
-    config.set("count", count);
-});
 
 ipcMain.on("set-resolution", (event, {width, height, display}) => {
     if (!width || !height) return;
 
     moveMainWinToDisplay(display, width, height);
 
-    for (const {setSize} of clients) {
-        setSize();
-    }
-
     config.set("resolution.width", width);
     config.set("resolution.height", height);
     config.set("resolution.display", display);
+
+    applyLayout();
 });
 
 ipcMain.on("join-room", (event, {client, room}) => {
@@ -254,6 +258,12 @@ ipcMain.on("load-replay", (event, {client, content}) => {
     }
 
     clients[index].view.webContents.send("load-replay", content);
+});
+
+ipcMain.on("set-layout", (event, layout) => {
+    if (!LAYOUTS[layout]) return;
+    config.set("layout", layout);
+    applyLayout();
 });
 
 function setup() {
@@ -335,7 +345,8 @@ function setup() {
         configWin.show();
     });
 
-    createViews(config.get("count"));
+    createViews();
+    applyLayout();
 }
 
 let quitting = false;

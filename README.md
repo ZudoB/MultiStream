@@ -1,6 +1,6 @@
 # MultiStream for TETR.IO
 
-A simple application that allows you to have 1, 2 or 4 concurrent TETR.IO clients in one window. Perfect for hosting
+A simple application that allows you to have up to four concurrent TETR.IO clients in one window. Perfect for hosting
 tournaments.
 
 ## Setup
