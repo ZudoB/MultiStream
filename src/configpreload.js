@@ -15,4 +15,5 @@ contextBridge.exposeInMainWorld("config", {
     getScreens: () => ipcRenderer.sendSync("get-screens"),
     loadReplay: (client, content) => ipcRenderer.send("load-replay", {client, content}),
     setLayout: layout => ipcRenderer.send("set-layout", layout),
+    swapClients: (clientA, clientB) => ipcRenderer.send("swap-clients", {clientA, clientB})
 })

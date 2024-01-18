@@ -149,6 +149,35 @@
 </fieldset>
 
 <fieldset>
+    <legend>
+        Swap Clients
+    </legend>
+
+    <form id="swapform">
+        <div>
+            A:
+            <select name="clienta" title="Select client A">
+                <option value="0">1</option>
+                <option value="1">2</option>
+                <option value="2">3</option>
+                <option value="3">4</option>
+            </select>
+        </div>
+        <div>
+            B:
+            <select name="clientb" title="Select client B">
+                <option value="0">1</option>
+                <option value="1">2</option>
+                <option value="2">3</option>
+                <option value="3">4</option>
+            </select>
+        </div>
+        <button type="submit">Swap</button>
+    </form>
+
+</fieldset>
+
+<fieldset>
     <legend>Display and Resolution</legend>
 
     <form id="resform">
@@ -279,6 +308,14 @@
     //     const count = fd.get("clients");
     //     config.setCount(parseInt(count) || 1);
     // });
+
+    document.querySelector("#swapform").addEventListener("submit", e => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const clientA = parseInt(fd.get("clienta"));
+        const clientB = parseInt(fd.get("clientb"));
+        config.swapClients(clientA, clientB);
+    })
 
     document.querySelector("#resform").addEventListener("submit", e => {
         e.preventDefault();
