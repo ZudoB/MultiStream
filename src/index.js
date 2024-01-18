@@ -266,6 +266,13 @@ ipcMain.on("set-layout", (event, layout) => {
     applyLayout();
 });
 
+ipcMain.on("swap-clients", (event, {clientA, clientB}) => {
+    const temp = clients[clientA];
+    clients[clientA] = clients[clientB];
+    clients[clientB] = temp;
+    applyLayout();
+})
+
 function setup() {
     mainWin = new BrowserWindow({
         useContentSize: true,
