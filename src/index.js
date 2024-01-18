@@ -9,6 +9,7 @@ let configWin;
 const config = new Store({
     defaults: {
         layout: "1x1",
+        clientorder: [0, 1, 2, 3],
         resolution: {
             width: 1920,
             height: 1080,
@@ -140,7 +141,7 @@ function createViews() {
     for (let i = 0; i < 4; i++) {
         const client = createView(i);
         client.setSize(i % 2, Math.floor(i / 2), 1, 1);
-        clients.push(client);
+        clients[config.get("clientorder")[i]] = client;
     }
 }
 
@@ -268,9 +269,17 @@ ipcMain.on("set-layout", (event, layout) => {
 
 ipcMain.on("swap-clients", (event, {clientA, clientB}) => {
     const temp = clients[clientA];
+
     clients[clientA] = clients[clientB];
     clients[clientB] = temp;
     applyLayout();
+
+    const order = config.get("clientorder");
+    const temp2 = order[clientA];
+    order[clientA] = order[clientB];
+    order[clientB] = temp2;
+
+    config.set("clientorder", order);
 })
 
 function setup() {
