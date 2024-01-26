@@ -6,6 +6,8 @@ const {doJSModification} = require("./intercept");
 let mainWin;
 let configWin;
 
+let quitting = false;
+
 const config = new Store({
     defaults: {
         layout: "1x1",
@@ -309,6 +311,8 @@ ipcMain.on("swap-clients", (event, {clientA, clientB}) => {
 });
 
 ipcMain.on("client-status", (event, status) => {
+    if (!configWin || quitting) return; // if we're quitting, chances are the config window is closed
+
     if (status.ingame) {
         clientsInGame.add(status.client);
     } else {
@@ -316,6 +320,7 @@ ipcMain.on("client-status", (event, status) => {
     }
 
     status.client = config.get("clientorder").indexOf(status.client); // real client index
+
     configWin.webContents.send("client-status", status);
 });
 
@@ -439,8 +444,6 @@ function setup() {
     createViews();
     applyLayout();
 }
-
-let quitting = false;
 
 app.whenReady().then(() => {
     if (!app.requestSingleInstanceLock()) {
