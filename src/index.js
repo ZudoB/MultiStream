@@ -10,6 +10,7 @@ const config = new Store({
     defaults: {
         layout: "1x1",
         clientorder: [0, 1, 2, 3],
+        smartlayout: false,
         resolution: {
             width: 1920,
             height: 1080,
@@ -24,7 +25,9 @@ const config = new Store({
         nointercept: false,
         devtools: false,
         replaysdir: join(app.getPath("documents"), "MultiStream Replays"),
-        css: "/* Custom CSS here will be added into each client */"
+        css: "/* Custom CSS here will be added into each client */",
+        zoom: 100,
+        framerate: 60
     }
 });
 
@@ -43,7 +46,7 @@ function createView(index) {
         }
     });
 
-    view.webContents.loadURL("https://tetr.io");
+    view.webContents.loadURL(`https://tetr.io/?__multistream_client_index=${index}`);
 
     if (config.get("devtools")) view.webContents.openDevTools({mode: "undocked"});
 
@@ -124,7 +127,8 @@ function createView(index) {
     return {view, setSize};
 }
 
-let clients = [];
+const baseClients = []; // FIXED index
+let clients = []; // user defined index
 
 const LAYOUTS = {
     "1x1": [[0, 0, 2, 2]],
@@ -138,10 +142,13 @@ const LAYOUTS = {
 };
 
 function createViews() {
+    const clientorder = config.get("clientorder");
     for (let i = 0; i < 4; i++) {
         const client = createView(i);
         client.setSize(i % 2, Math.floor(i / 2), 1, 1);
-        clients[config.get("clientorder")[i]] = client;
+        mainWin.addBrowserView(client.view);
+        baseClients[i] = client;
+        clients[clientorder[i]] = client;
     }
 }
 
@@ -156,7 +163,6 @@ function applyLayout() {
 
     for (let i = 0; i < layoutData.length; i++) {
         if (!clients[i]) break;
-        mainWin.addBrowserView(clients[i].view);
         clients[i].setSize(...layoutData[i]);
     }
 
@@ -187,7 +193,7 @@ function moveMainWinToDisplay(display, width, height) {
     applyLayout();
 }
 
-ipcMain.on("set-resolution", (event, {width, height, display}) => {
+ipcMain.on("set-resolution", (event, {width, height, display, framerate}) => {
     if (!width || !height) return;
 
     moveMainWinToDisplay(display, width, height);
@@ -195,6 +201,11 @@ ipcMain.on("set-resolution", (event, {width, height, display}) => {
     config.set("resolution.width", width);
     config.set("resolution.height", height);
     config.set("resolution.display", display);
+    config.set("framerate", framerate);
+
+    for (const {view} of clients) {
+        view.webContents.send("set-framerate", framerate);
+    }
 
     applyLayout();
 });
@@ -267,20 +278,84 @@ ipcMain.on("set-layout", (event, layout) => {
     applyLayout();
 });
 
-ipcMain.on("swap-clients", (event, {clientA, clientB}) => {
-    const temp = clients[clientA];
+function setClientOrder(order) {
+    const newClients = [];
 
-    clients[clientA] = clients[clientB];
-    clients[clientB] = temp;
-    applyLayout();
+    for (let i = 0; i < order.length; i++) {
+        newClients[i] = baseClients[order[i]];
+    }
 
-    const order = config.get("clientorder");
-    const temp2 = order[clientA];
-    order[clientA] = order[clientB];
-    order[clientB] = temp2;
+    clients = newClients;
 
     config.set("clientorder", order);
-})
+    applyLayout();
+}
+
+function swapClients(clientA, clientB) {
+    const order = config.get("clientorder");
+
+    const temp = order[clientA];
+    order[clientA] = order[clientB];
+    order[clientB] = temp;
+
+    setClientOrder(order);
+}
+
+
+const clientsInGame = new Set();
+
+ipcMain.on("swap-clients", (event, {clientA, clientB}) => {
+    swapClients(clientA, clientB);
+});
+
+ipcMain.on("client-status", (event, status) => {
+    if (status.ingame) {
+        clientsInGame.add(status.client);
+    } else {
+        clientsInGame.delete(status.client);
+    }
+
+    status.client = config.get("clientorder").indexOf(status.client); // real client index
+    configWin.webContents.send("client-status", status);
+});
+
+ipcMain.on("set-zoom", (event, zoom) => {
+    for (const {view} of clients) {
+        view.webContents.setZoomFactor(zoom / 100);
+    }
+});
+
+setInterval(() => {
+    if (config.get("smartlayout")) {
+        let newlayout;
+
+        switch (clientsInGame.size) {
+            case 4:
+                newlayout = "2x2";
+                break;
+            case 3:
+                newlayout = "1L-2R";
+                break;
+            case 2:
+                newlayout = "2x1";
+                break;
+            default:
+                newlayout = "1x1";
+                break;
+        }
+
+        const neworder = config.get("clientorder").sort((a, b) => {
+            if (clientsInGame.has(a) && !clientsInGame.has(b)) return -1;
+            if (!clientsInGame.has(a) && clientsInGame.has(b)) return 1;
+            return 0;
+        });
+
+        setClientOrder(neworder);
+        config.set("layout", newlayout);
+
+        applyLayout();
+    }
+}, 3000);
 
 function setup() {
     mainWin = new BrowserWindow({

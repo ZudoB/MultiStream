@@ -51,7 +51,18 @@
         .layout > .double-width {
             grid-column: span 2;
         }
+
+        input[type=range] {
+            width: 100%;
+        }
+
+        .row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     </style>
+    <script src="../../extension-loader/_temp/main.js"></script>
 </head>
 <body>
 <fieldset>
@@ -94,57 +105,92 @@
 </fieldset>
 
 <fieldset>
-    <legend>Client Layout</legend>
+    <legend>Client Statuses</legend>
 
-    <div class="layouts">
-        <div class="layout" data-setlayout="1x1">
-            <div class="double-width double-height">1</div>
-        </div>
-
-        <div class="layout" data-setlayout="2x1">
-            <div class="double-height">1</div>
-            <div class="double-height">2</div>
-        </div>
-
-        <div class="layout" data-setlayout="1x2">
-            <div class="double-width">1</div>
-            <div class="double-width">2</div>
-        </div>
-
-        <div class="layout" data-setlayout="2x2">
-            <div>1</div>
-            <div>2</div>
-            <div>3</div>
-            <div>4</div>
-        </div>
-
+    <div>
+        <strong>Client 1</strong>
+        <span id="client0-status"></span>
     </div>
 
-    <div class="layouts">
-        <div class="layout" data-setlayout="1L-2R">
-            <div class="double-height">1</div>
-            <div>2</div>
-            <div>3</div>
+    <div>
+        <strong>Client 2</strong>
+        <span id="client1-status"></span>
+    </div>
+
+    <div>
+        <strong>Client 3</strong>
+        <span id="client2-status"></span>
+    </div>
+
+    <div>
+        <strong>Client 4</strong>
+        <span id="client3-status"></span>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>Client Layout</legend>
+
+    <div class="mb1">
+        <label><input type="checkbox" data-configtoggle="smartlayout"> Smart Layout
+            <strong>(experimental!)</strong></label>
+    </div>
+
+    <div id="layouts">
+        <div class="layouts">
+            <div class="layout" data-setlayout="1x1">
+                <div class="double-width double-height">1</div>
+            </div>
+
+            <div class="layout" data-setlayout="2x1">
+                <div class="double-height">1</div>
+                <div class="double-height">2</div>
+            </div>
+
+            <div class="layout" data-setlayout="1x2">
+                <div class="double-width">1</div>
+                <div class="double-width">2</div>
+            </div>
+
+            <div class="layout" data-setlayout="2x2">
+                <div>1</div>
+                <div>2</div>
+                <div>3</div>
+                <div>4</div>
+            </div>
+
         </div>
 
-        <div class="layout" data-setlayout="2L-1R">
-            <div>1</div>
-            <div class="double-height">2</div>
-            <div>3</div>
-        </div>
+        <div class="layouts">
+            <div class="layout" data-setlayout="1L-2R">
+                <div class="double-height">1</div>
+                <div>2</div>
+                <div>3</div>
+            </div>
 
-        <div class="layout" data-setlayout="2T-1B">
-            <div>1</div>
-            <div>2</div>
-            <div class="double-width">3</div>
-        </div>
+            <div class="layout" data-setlayout="2L-1R">
+                <div>1</div>
+                <div class="double-height">2</div>
+                <div>3</div>
+            </div>
 
-        <div class="layout" data-setlayout="1T-2B">
-            <div class="double-width">1</div>
-            <div>2</div>
-            <div>3</div>
-        </div>
+            <div class="layout" data-setlayout="2T-1B">
+                <div>1</div>
+                <div>2</div>
+                <div class="double-width">3</div>
+            </div>
 
+            <div class="layout" data-setlayout="1T-2B">
+                <div class="double-width">1</div>
+                <div>2</div>
+                <div>3</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="smartlayout-info">
+        Smart Layout will automatically swap in clients with games actively running, and swap out clients that are idle.
+        This is an experimental feature that may cause unexpected behaviour, so please report any issues you encounter.
     </div>
 </fieldset>
 
@@ -154,7 +200,7 @@
     <form id="swapform">
         <div>
             <select name="clienta" title="Select client A">
-                <option value="0">Client 1</option>
+                <option value="0" selected>Client 1</option>
                 <option value="1">Client 2</option>
                 <option value="2">Client 3</option>
                 <option value="3">Client 4</option>
@@ -162,7 +208,7 @@
             &harr;
             <select name="clientb" title="Select client B">
                 <option value="0">Client 1</option>
-                <option value="1">Client 2</option>
+                <option value="1" selected>Client 2</option>
                 <option value="2">Client 3</option>
                 <option value="3">Client 4</option>
             </select>
@@ -180,16 +226,41 @@
             Display:
             <select name="display" title="Select display"></select>
         </div>
-        <div class="mb1">
+        <div>
             Resolution:
             <input type="number" max="2560" min="1280" name="width" step="2" title="Width">
             x
             <input type="number" min="720" max="1440" name="height" step="2" title="Height">
         </div>
+        <div class="mb1">
+            Framerate cap: <input type="number" min="0" max="500" name="framerate" title="Framerate cap">
+        </div>
         <div>
             <button type="submit">Apply</button>
         </div>
     </form>
+</fieldset>
+
+<fieldset>
+    <legend>
+        Client Zoom
+    </legend>
+
+    <div class="row">
+        <div>25%</div>
+        <input type="range" min="25" max="175" step="25" list="zoom-steps" title="Zoom" id="zoom-slider">
+        <div>175%</div>
+    </div>
+
+    <datalist id="zoom-steps">
+        <option value="25" label="25%"></option>
+        <option value="50" label="50%"></option>
+        <option value="75" label="75%"></option>
+        <option value="100" label="100%"></option>
+        <option value="125" label="125%"></option>
+        <option value="150" label="150%"></option>
+        <option value="175" label="175%"></option>
+    </datalist>
 </fieldset>
 
 <p>Changes to the following settings will require a client reload to take effect.</p>
@@ -317,7 +388,7 @@
         const fd = new FormData(e.target);
         const width = Math.floor(fd.get("width") / 2) * 2;
         const height = Math.floor(fd.get("height") / 2) * 2;
-        config.setResolution(width, height, fd.get("display"));
+        config.setResolution(width, height, fd.get("display"), fd.get("framerate"));
     });
 
     document.querySelectorAll("[data-client-join]").forEach(el => {
@@ -400,10 +471,12 @@
 
             el.classList.add("active");
 
-            console.log(el.dataset.setlayout);
-
             config.setLayout(el.dataset.setlayout);
         });
+    });
+
+    document.querySelector("#zoom-slider").addEventListener("input", e => {
+        config.setZoom(parseInt(e.target.value));
     });
 
     const screens = config.getScreens();
@@ -417,6 +490,37 @@
     if (config.getConfig("resolution.display")) {
         document.querySelector("[name=display]").value = config.getConfig("resolution.display");
     }
+
+    document.querySelector("[name=framerate]").value = config.getConfig("framerate");
+
+    document.querySelector("[data-configtoggle=smartlayout]").addEventListener("change", e => {
+        document.querySelector("#layouts").style.display = e.target.checked ? "none" : "block";
+        document.querySelector("#smartlayout-info").style.display = e.target.checked ? "block" : "none";
+
+        // select the correct layout if disabling
+        const layouts = document.querySelectorAll("[data-setlayout]");
+        const layout = config.getConfig("layout");
+
+        layouts.forEach(el => {
+            if (el.dataset.setlayout === layout) {
+                el.classList.add("active");
+            } else {
+                el.classList.remove("active");
+            }
+        });
+    });
+
+    document.querySelector("#layouts").style.display = document.querySelector("[data-configtoggle=smartlayout]").checked ? "none" : "block";
+    document.querySelector("#smartlayout-info").style.display = document.querySelector("[data-configtoggle=smartlayout]").checked ? "block" : "none";
+
+    config.onClientStatus(status => {
+        if (status.roomid) {
+            // ${status.p1 ? ` - ${status.p1.toUpperCase()}${status.p2 ? ` and ${status.p2.toUpperCase()}` : ""}` : ""}
+            document.querySelector(`#client${status.client}-status`).innerText = `${status.roomid} - ${status.players} players${status.ingame ? "- INGAME" : ""}`;
+        } else {
+            document.querySelector(`#client${status.client}-status`).innerText = "Not in a room";
+        }
+    });
 </script>
 </body>
 </html>

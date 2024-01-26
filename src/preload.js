@@ -1,36 +1,15 @@
 const {ipcRenderer} = require("electron/renderer");
 
+// window.IS_ELECTRON = true;
+// window.REFRESH_RATE = 30;
+// window.CLIENT_VERSION = "meow";
+//
+// window.IPC = {
+//     send(){},
+//     on(){}
+// };
+
 (async () => {
-    const getConfig = key => ipcRenderer.sendSync("get-config", key);
-
-    ipcRenderer.on("join-room", (e, room) => {
-        window.DEVHOOK_FAST_JOIN_ROOM(room);
-    });
-
-    ipcRenderer.on("load-replay", (e, content) => {
-        if (content.ismulti) {
-            window.DEVHOOK_MS_MULTILOG(content);
-            return;
-        }
-        window.DEVHOOK_LOAD_REPLAY_RAW(content);
-    });
-
-    let wasLastVictoryScreenVisible = false;
-    const autoDownloadObserver = new MutationObserver(() => {
-        const isVisible = !document.getElementById("victoryview").classList.contains("hidden");
-
-        if (!isVisible) {
-            wasLastVictoryScreenVisible = false;
-            return;
-        }
-
-        if (isVisible && !wasLastVictoryScreenVisible && getConfig("savereplays")) {
-            wasLastVictoryScreenVisible = true;
-            document.getElementById("victory_downloadreplay").click();
-        }
-    });
-
-
     if (window.location.hostname !== "tetr.io") {
         return;
     }
@@ -42,6 +21,11 @@ const {ipcRenderer} = require("electron/renderer");
             callback();
         }, 10);
     }
+
+    const usp = new URLSearchParams(window.location.search);
+    const client = parseInt(usp.get("__multistream_client_index"));
+
+    const getConfig = key => ipcRenderer.sendSync("get-config", key);
 
     const CONFIG = {
         "controls": {
@@ -141,15 +125,6 @@ const {ipcRenderer} = require("electron/renderer");
         }
     };
 
-    // window.IS_ELECTRON = true;
-    // window.CLIENT_VERSION = "UNSUPPORTED";
-    // window.IPC = {
-    //     on() {
-    //     }, off() {
-    //     }, send() {
-    //     }
-    // }
-
     awaitSomething(() => "PIXI" in window, () => {
         window.PIXI.Application = new Proxy(window.PIXI.Application, {
             construct(target, args) {
@@ -157,6 +132,65 @@ const {ipcRenderer} = require("electron/renderer");
                 return new target(...args);
             }
         });
+
+        window.MS_PIXIHook = window.PIXI;
+    });
+
+    ipcRenderer.on("join-room", (e, room) => {
+        window.DEVHOOK_FAST_JOIN_ROOM(room);
+    });
+
+    ipcRenderer.on("load-replay", (e, content) => {
+        if (content.ismulti) {
+            window.DEVHOOK_MS_MULTILOG(content);
+            return;
+        }
+        window.DEVHOOK_LOAD_REPLAY_RAW(content);
+    });
+
+    ipcRenderer.on("set-framerate", (e, framerate) => {
+        window.MS_PIXIHook.Ticker.shared.maxFPS = framerate;
+    });
+
+    let wasLastVictoryScreenVisible = false;
+    const autoDownloadObserver = new MutationObserver(() => {
+        const isVisible = !document.getElementById("victoryview").classList.contains("hidden");
+
+        if (!isVisible) {
+            wasLastVictoryScreenVisible = false;
+            return;
+        }
+
+        if (isVisible && !wasLastVictoryScreenVisible && getConfig("savereplays")) {
+            wasLastVictoryScreenVisible = true;
+            document.getElementById("victory_downloadreplay").click();
+        }
+    });
+
+
+    const clientStatusObserver = new MutationObserver(() => {
+        const entries = document.querySelectorAll("#room_players .scroller_player:not(.spectator)");
+        const p1 = entries[0]?.dataset.username;
+        const p2 = entries[1]?.dataset.username;
+
+        const roomid = document.getElementById("roomid").innerText.substring(1);
+
+        ipcRenderer.send("client-status", {
+            client,
+            roomid,
+            p1,
+            p2,
+            players: entries.length,
+            ingame: document.body.classList.contains("inmulti")
+        });
+
+        // todo: this ought to be somewhere else
+        window.PIXI.Ticker.shared.maxFPS = getConfig("framerate");
+    });
+
+    ipcRenderer.send("client-status", {
+        client,
+        ingame: false
     });
 
     if (getConfig("nospecbar")) {
@@ -186,8 +220,12 @@ const {ipcRenderer} = require("electron/renderer");
     }
 
     if (getConfig("skiplogin")) {
-        awaitSomething(() => document.getElementById("entry_form") && !document.getElementById("entry_form").classList.contains("hidden"), () => {
-            document.getElementById("entry_button").click();
+        awaitSomething(() => document.querySelector("#entry_form:not(.hidden), #return_form:not(.hidden)"), () => {
+            if (document.querySelector("#entry_form:not(.hidden)")) {
+                document.getElementById("entry_button").click();
+            } else {
+                document.getElementById("return_button").click();
+            }
         });
     }
 
@@ -199,13 +237,27 @@ const {ipcRenderer} = require("electron/renderer");
 
     window.onload = () => {
         if (getConfig("transparent")) document.documentElement.style.backgroundColor = "transparent";
+
         document.getElementById("multi_league").style.display = "none"; // prevent silliness
-        // document.body.classList.add("no_login_ceriad", "ceriad_disabled", "ceriad_exempt");
+        // document.getElementById("config_electron").style.display = "none"; // don't let people change desktop settings where it's almost guaranteed to break
+
         autoDownloadObserver.observe(document.getElementById("victoryview"), {
             attributes: true,
             attributeFilter: ["class"]
         });
+
+        clientStatusObserver.observe(document.getElementById("room_players"), {
+            childList: true,
+            subtree: true
+        });
+
+        clientStatusObserver.observe(document.getElementById("roomid"), {
+            childList: true
+        });
+
+        clientStatusObserver.observe(document.body, {
+            attributes: true,
+            attributeFilter: ["class"]
+        });
     }
-
-
 })();
