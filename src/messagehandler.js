@@ -1,4 +1,4 @@
-const { WebSocketServer } = require("ws");
+const { WebSocketServer, WebSocket } = require("ws");
 const {EventEmitter} = require("node:events")
 
 module.exports = class MessageHandler extends EventEmitter {
@@ -15,9 +15,6 @@ module.exports = class MessageHandler extends EventEmitter {
     
         this.wss.on('connection', ws => {
             console.log("client connected");
-
-            ws.onmessage()
-
         });
     
         this.wss.on("error", (error) => {
@@ -33,8 +30,8 @@ module.exports = class MessageHandler extends EventEmitter {
 
         //console.log(JSON.stringify(data, null, 2))
 
-        for(let client in this.wss.clients) {
-            if (client.readyState === ws.WebSocket.OPEN) client.send(message);
+        for(let client of this.wss.clients) {
+            if (client.readyState === WebSocket.OPEN) client.send(message);
         }
     }
 
