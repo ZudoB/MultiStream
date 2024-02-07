@@ -2,6 +2,8 @@ const {app, BrowserWindow, BrowserView, ipcMain, dialog, shell, screen, net} = r
 const {join} = require("path");
 const Store = require("electron-store");
 const {doJSModification} = require("./intercept");
+const {WebSocketServer} = require("ws"); 
+const MessageHandler = require("./messagehandler");
 
 let mainWin;
 let configWin;
@@ -41,7 +43,7 @@ function createView(index) {
             nodeIntegration: false,
             nodeIntegrationInSubFrames: false,
             enableRemoteModule: false,
-            contextIsolation: false,
+            contextIsolation: true,
             backgroundThrottling: false,
             nativeWindowOpen: true,
             disableBlinkFeatures: 'PreloadMediaEngagementData,AutoplayIgnoreWebAudio,MediaEngagementBypassAutoplayPolicies'
@@ -91,7 +93,7 @@ function createView(index) {
     view.webContents.session.protocol.handle("multistream", async () => {
         const tetriojs = await net.fetch("https://tetr.io/js/tetrio.js");
         const text = await tetriojs.text();
-        const newtext = await doJSModification(text);
+        const newtext = await doJSModification(text, index);
 
         return new Response(newtext, {
             headers: {
@@ -440,6 +442,14 @@ function setup() {
     configWin.on("ready-to-show", () => {
         configWin.show();
     });
+
+    //websocket stuff
+    const messageHandler = new MessageHandler();
+    ipcMain.on("receive-message", (event, {message, index}) => {
+        const order = config.get("clientorder");
+        const swappedIndex = order[index];
+        messageHandler.handleRibbonMessage(message, swappedIndex);
+    })
 
     createViews();
     applyLayout();

@@ -1,4 +1,4 @@
-const {ipcRenderer} = require("electron/renderer");
+const {ipcRenderer, contextBridge} = require("electron/renderer");
 
 // window.IS_ELECTRON = true;
 // window.REFRESH_RATE = 30;
@@ -13,7 +13,12 @@ const {ipcRenderer} = require("electron/renderer");
     if (window.location.hostname !== "tetr.io") {
         return;
     }
-
+    
+    contextBridge.exposeInMainWorld("wsmod", {
+        sendMessage: (message, index) => ipcRenderer.send("send-message", {message, index}),
+        receiveMessage: (message, index) => ipcRenderer.send("receive-message", {message, index})
+    })
+    
     function awaitSomething(predicate, callback) {
         let int = setInterval(() => {
             if (!predicate()) return;
@@ -151,6 +156,7 @@ const {ipcRenderer} = require("electron/renderer");
     ipcRenderer.on("set-framerate", (e, framerate) => {
         window.MS_PIXIHook.Ticker.shared.maxFPS = framerate;
     });
+    
 
     let wasLastVictoryScreenVisible = false;
     const autoDownloadObserver = new MutationObserver(() => {
@@ -261,3 +267,4 @@ const {ipcRenderer} = require("electron/renderer");
         });
     }
 })();
+
