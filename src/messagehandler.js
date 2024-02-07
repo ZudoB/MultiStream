@@ -85,7 +85,10 @@ module.exports = class MessageHandler extends EventEmitter {
                 break;
             case "room.join":
             case "room.update":
+            case "room.update.auto":
             case "room.leave":
+            case "room.chat":
+            case "game.ready":
                 this.broadcast({
                     index, message
                 })
