@@ -5,7 +5,7 @@ module.exports = class MessageHandler extends EventEmitter {
 
     wss;
 
-    constructor() {
+    constructor(layout) {
         super()
 
         //create websocket server
@@ -15,6 +15,15 @@ module.exports = class MessageHandler extends EventEmitter {
     
         this.wss.on('connection', ws => {
             console.log("client connected");
+            ws.send(JSON.stringify({
+                data :{
+                    message:{
+                        command:'multistream.layout',
+                        layout
+                    }
+                }
+            }))
+            
         });
     
         this.wss.on("error", (error) => {

@@ -7,7 +7,6 @@ const MessageHandler = require("./messagehandler");
 
 let mainWin;
 let configWin;
-
 let quitting = false;
 
 const config = new Store({
@@ -156,8 +155,23 @@ function createViews() {
     }
 }
 
+//websocket stuff
+const messageHandler = new MessageHandler(LAYOUTS[config.get("layout")]); //send message handler current layout
+ipcMain.on("receive-message", (event, {message, index}) => {
+    const order = config.get("clientorder");
+    const swappedIndex = order[index];
+    messageHandler.handleRibbonMessage(message, swappedIndex);
+})
+
 function applyLayout() {
     const layoutData = LAYOUTS[config.get("layout")];
+
+    messageHandler.broadcast({
+        message:{
+            command:'multistream.layout',
+            layout: layoutData
+        }
+    })
 
     if (!layoutData) return;
 
@@ -443,14 +457,6 @@ function setup() {
         configWin.show();
     });
 
-    //websocket stuff
-    const messageHandler = new MessageHandler();
-    ipcMain.on("receive-message", (event, {message, index}) => {
-        const order = config.get("clientorder");
-        const swappedIndex = order[index];
-        messageHandler.handleRibbonMessage(message, swappedIndex);
-    })
-
     createViews();
     applyLayout();
 }
@@ -462,3 +468,4 @@ app.whenReady().then(() => {
         setup();
     }
 });
+
