@@ -60,8 +60,10 @@ module.exports = class MessageHandler extends EventEmitter {
     setLayout(layout){
         this.layout = layout;
         this.broadcast({
-            message: 'multistream.layout',
-            layout: this.layout
+            message: {
+                command: 'multistream.layout',
+                layout: this.layout
+            }
         })
     }
 
