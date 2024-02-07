@@ -4,6 +4,9 @@ const {EventEmitter} = require("node:events")
 module.exports = class MessageHandler extends EventEmitter {
 
     wss;
+    layout;
+
+
 
     constructor(layout) {
         super()
@@ -12,6 +15,8 @@ module.exports = class MessageHandler extends EventEmitter {
         this.wss = new WebSocketServer({
             port: 31462
         });
+
+        this.layout = layout;
     
         this.wss.on('connection', ws => {
             console.log("client connected");
@@ -19,7 +24,7 @@ module.exports = class MessageHandler extends EventEmitter {
                 data :{
                     message:{
                         command:'multistream.layout',
-                        layout
+                        layout: this.layout
                     }
                 }
             }))
@@ -50,6 +55,14 @@ module.exports = class MessageHandler extends EventEmitter {
 
         made this class an eventemitter, so that messageHandler.on("layout") can be used to edit the client layout, for example
         */
+    }
+
+    setLayout(layout){
+        this.layout = layout;
+        this.broadcast({
+            message: 'multistream.layout',
+            layout: this.layout
+        })
     }
 
     handleRibbonMessage(message, index) {

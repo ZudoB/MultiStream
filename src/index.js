@@ -166,12 +166,7 @@ ipcMain.on("receive-message", (event, {message, index}) => {
 function applyLayout() {
     const layoutData = LAYOUTS[config.get("layout")];
 
-    messageHandler.broadcast({
-        message:{
-            command:'multistream.layout',
-            layout: layoutData
-        }
-    })
+    messageHandler.setLayout(layoutData)
 
     if (!layoutData) return;
 
