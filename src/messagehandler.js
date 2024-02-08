@@ -85,6 +85,18 @@ module.exports = class MessageHandler extends EventEmitter {
         const tempRoom = this.rooms[a];
         this.rooms[a] = this.rooms[b];
         this.rooms[b] = tempRoom;
+
+        //broadcast updated room status
+
+        [a,b].forEach(i => {
+            this.broadcast({
+                index: i,
+                message: {
+                    command: "room.update",
+                    data: this.rooms[i]
+                }
+            })
+        })
     }
 
     handleRibbonMessage(message, index) {
