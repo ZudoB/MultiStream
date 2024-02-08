@@ -5,6 +5,7 @@ module.exports = class MessageHandler extends EventEmitter {
 
     wss;
     layout;
+    rooms;
 
 
 
@@ -17,6 +18,7 @@ module.exports = class MessageHandler extends EventEmitter {
         });
 
         this.layout = layout;
+        this.rooms = [null,null,null,null];
     
         this.wss.on('connection', ws => {
             console.log("client connected");
@@ -27,7 +29,19 @@ module.exports = class MessageHandler extends EventEmitter {
                         layout: this.layout
                     }
                 }
-            }))
+            }));
+            this.rooms.forEach((room, index) => {
+                if(!room) return;
+                ws.send(JSON.stringify({
+                    data:{
+                        index,
+                        message: {
+                            command: "room.update",
+                            data: room
+                        }
+                    }
+                }))
+            })
             
         });
     
@@ -67,6 +81,12 @@ module.exports = class MessageHandler extends EventEmitter {
         })
     }
 
+    swapRooms(a,b) {
+        const tempRoom = this.rooms[a];
+        this.rooms[a] = this.rooms[b];
+        this.rooms[b] = tempRoom;
+    }
+
     handleRibbonMessage(message, index) {
         //ribbon message handling goes here.
 
@@ -83,10 +103,21 @@ module.exports = class MessageHandler extends EventEmitter {
                 break;
             case "replay":
                 break;
-            case "room.join":
             case "room.update":
-            case "room.update.auto":
+                this.rooms[index] = message.data
+                this.broadcast({
+                    index, message
+                }) 
+                break;
+
             case "room.leave":
+                this.rooms[index] = null;
+                this.broadcast({
+                    index, message
+                })
+                break;
+            case "room.join":
+            case "room.update.auto":
             case "room.chat":
             case "game.ready":
                 this.broadcast({

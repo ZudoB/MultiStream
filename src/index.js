@@ -311,6 +311,9 @@ function swapClients(clientA, clientB) {
     order[clientA] = order[clientB];
     order[clientB] = temp;
 
+    //swap stored rooms in messageHandler - should it even be called MessageHandler at this point
+    messageHandler.swapRooms(clientA, clientB);
+
     setClientOrder(order);
 }
 
