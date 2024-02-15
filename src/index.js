@@ -336,6 +336,14 @@ ipcMain.on("client-status", (event, status) => {
     status.client = config.get("clientorder").indexOf(status.client); // real client index
 
     configWin.webContents.send("client-status", status);
+
+    messageHandler.broadcast({
+        message:{
+            command:"multistream.clientstatus",
+            status:status
+        }
+    })
+
 });
 
 ipcMain.on("set-zoom", (event, zoom) => {
@@ -343,6 +351,15 @@ ipcMain.on("set-zoom", (event, zoom) => {
         view.webContents.setZoomFactor(zoom / 100);
     }
 });
+
+ipcMain.on("in-game", (event, inGame) => {
+    messageHandler.broadcast({
+        message:{
+            command:"multistream.ingame",
+            inGame: inGame
+        }
+    })
+})
 
 setInterval(() => {
     if (config.get("smartlayout")) {

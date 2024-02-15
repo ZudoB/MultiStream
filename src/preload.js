@@ -173,7 +173,6 @@ const {ipcRenderer, contextBridge} = require("electron/renderer");
         }
     });
 
-
     const clientStatusObserver = new MutationObserver(() => {
         const entries = document.querySelectorAll("#room_players .scroller_player:not(.spectator)");
         const p1 = entries[0]?.dataset.username;
@@ -187,12 +186,14 @@ const {ipcRenderer, contextBridge} = require("electron/renderer");
             p1,
             p2,
             players: entries.length,
-            ingame: document.body.classList.contains("inmulti")
+            ingame: document.body.classList.contains("ingame")
         });
 
         // todo: this ought to be somewhere else
         window.PIXI.Ticker.shared.maxFPS = getConfig("framerate");
     });
+
+    
 
     ipcRenderer.send("client-status", {
         client,
