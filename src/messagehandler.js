@@ -24,14 +24,6 @@ module.exports = class MessageHandler extends EventEmitter {
 
         this.wss.on('connection', ws => {
             console.log("client connected");
-            ws.send(JSON.stringify({
-                data :{
-                    message:{
-                        command:'multistream.layout',
-                        layout: this.layout
-                    }
-                }
-            }));
 
             this.statuses.forEach((status, index) => {
                 if(!status) return;
@@ -45,6 +37,18 @@ module.exports = class MessageHandler extends EventEmitter {
                     }
                 }))
             })
+
+
+            ws.send(JSON.stringify({
+                data :{
+                    message:{
+                        command:'multistream.layout',
+                        layout: this.layout
+                    }
+                }
+            }));
+
+            
 
             this.rooms.forEach((room, index) => {
                 if(!room) return;
