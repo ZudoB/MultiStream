@@ -133,6 +133,8 @@ function createView(index) {
 const baseClients = []; // FIXED index
 let clients = []; // user defined index
 
+let clientStatuses = [null,null,null,null];
+
 const LAYOUTS = {
     "1x1": [[0, 0, 2, 2]],
     "1x2": [[0, 0, 2, 1], [0, 1, 2, 1]],
@@ -311,8 +313,12 @@ function swapClients(clientA, clientB) {
     order[clientA] = order[clientB];
     order[clientB] = temp;
 
+    
+
     //swap stored rooms in messageHandler - should it even be called MessageHandler at this point
     messageHandler.swapRooms(clientA, clientB);
+    //and swap stored statuses
+    messageHandler.swapStatuses(clientA, clientB);
 
     setClientOrder(order);
 }
@@ -329,8 +335,10 @@ ipcMain.on("client-status", (event, status) => {
 
     if (status.ingame) {
         clientsInGame.add(status.client);
+        messageHandler.statuses[status.client] = status;
     } else {
         clientsInGame.delete(status.client);
+        messageHandler.statuses[status.client] = null;
     }
 
     status.client = config.get("clientorder").indexOf(status.client); // real client index
@@ -338,6 +346,7 @@ ipcMain.on("client-status", (event, status) => {
     configWin.webContents.send("client-status", status);
 
     messageHandler.broadcast({
+        index: status.client,
         message:{
             command:"multistream.clientstatus",
             status:status

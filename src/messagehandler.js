@@ -6,6 +6,7 @@ module.exports = class MessageHandler extends EventEmitter {
     wss;
     layout;
     rooms;
+    statuses;
 
 
 
@@ -19,7 +20,8 @@ module.exports = class MessageHandler extends EventEmitter {
 
         this.layout = layout;
         this.rooms = [null,null,null,null];
-    
+        this.statuses = [null,null,null,null];
+
         this.wss.on('connection', ws => {
             console.log("client connected");
             ws.send(JSON.stringify({
@@ -38,6 +40,18 @@ module.exports = class MessageHandler extends EventEmitter {
                         message: {
                             command: "room.update",
                             data: room
+                        }
+                    }
+                }))
+            })
+            this.statuses.forEach((status, index) => {
+                if(!status) return;
+                ws.send(JSON.stringify({
+                    data:{
+                        index,
+                        message: {
+                            command: "multistream.clientstatus",
+                            data: status
                         }
                     }
                 }))
@@ -98,6 +112,25 @@ module.exports = class MessageHandler extends EventEmitter {
             })
         })
     }
+
+    swapStatuses(a,b) {
+        const tempStatus = this.statuses[a];
+        this.statuses[a] = this.statuses[b];
+        this.statuses[b] = this.statuses;
+
+        //broadcast updated room status
+
+        [a,b].forEach(i => {
+            this.broadcast({
+                index: i,
+                message: {
+                    command: "multistream.clientstatus",
+                    data: this.statuses[i]
+                }
+            })
+        })
+    }
+    
 
     handleRibbonMessage(message, index) {
         //ribbon message handling goes here.
