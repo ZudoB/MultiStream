@@ -32,18 +32,7 @@ module.exports = class MessageHandler extends EventEmitter {
                     }
                 }
             }));
-            this.rooms.forEach((room, index) => {
-                if(!room) return;
-                ws.send(JSON.stringify({
-                    data:{
-                        index,
-                        message: {
-                            command: "room.update",
-                            data: room
-                        }
-                    }
-                }))
-            })
+
             this.statuses.forEach((status, index) => {
                 if(!status) return;
                 ws.send(JSON.stringify({
@@ -56,6 +45,20 @@ module.exports = class MessageHandler extends EventEmitter {
                     }
                 }))
             })
+
+            this.rooms.forEach((room, index) => {
+                if(!room) return;
+                ws.send(JSON.stringify({
+                    data:{
+                        index,
+                        message: {
+                            command: "room.update",
+                            data: room
+                        }
+                    }
+                }))
+            })
+            
             
         });
     
