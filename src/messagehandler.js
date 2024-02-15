@@ -32,7 +32,7 @@ module.exports = class MessageHandler extends EventEmitter {
                         index,
                         message: {
                             command: "multistream.clientstatus",
-                            data: status
+                            status: status
                         }
                     }
                 }))
