@@ -141,8 +141,9 @@ const {ipcRenderer} = require("electron/renderer");
     });
 
     ipcRenderer.on("load-replay", (e, content) => {
+        console.log(content);
         if (content.ismulti) {
-            window.DEVHOOK_MS_MULTILOG(content);
+            window.MULTISTREAM_HOOKS.game.showMultiLog(content);
             return;
         }
         window.DEVHOOK_LOAD_REPLAY_RAW(content);
@@ -177,7 +178,7 @@ const {ipcRenderer} = require("electron/renderer");
 
         ipcRenderer.send("client-status", {
             client,
-            roomid,
+            roomid: document.body.classList.contains("innormalmulti") ? roomid : null,
             p1,
             p2,
             players: entries.length,
