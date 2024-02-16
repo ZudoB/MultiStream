@@ -2,10 +2,11 @@ const {app, BrowserWindow, BrowserView, ipcMain, dialog, shell, screen, net} = r
 const {join} = require("path");
 const Store = require("electron-store");
 const {doJSModification} = require("./intercept");
+const {WebSocketServer} = require("ws"); 
+const MessageHandler = require("./messagehandler");
 
 let mainWin;
 let configWin;
-
 let quitting = false;
 
 const config = new Store({
@@ -41,7 +42,7 @@ function createView(index) {
             nodeIntegration: false,
             nodeIntegrationInSubFrames: false,
             enableRemoteModule: false,
-            contextIsolation: false,
+            contextIsolation: true,
             backgroundThrottling: false,
             nativeWindowOpen: true,
             disableBlinkFeatures: 'PreloadMediaEngagementData,AutoplayIgnoreWebAudio,MediaEngagementBypassAutoplayPolicies'
@@ -91,7 +92,7 @@ function createView(index) {
     view.webContents.session.protocol.handle("multistream", async () => {
         const tetriojs = await net.fetch("https://tetr.io/js/tetrio.js");
         const text = await tetriojs.text();
-        const newtext = await doJSModification(text);
+        const newtext = await doJSModification(text, index);
 
         return new Response(newtext, {
             headers: {
@@ -132,6 +133,8 @@ function createView(index) {
 const baseClients = []; // FIXED index
 let clients = []; // user defined index
 
+let clientStatuses = [null,null,null,null];
+
 const LAYOUTS = {
     "1x1": [[0, 0, 2, 2]],
     "1x2": [[0, 0, 2, 1], [0, 1, 2, 1]],
@@ -154,8 +157,18 @@ function createViews() {
     }
 }
 
+//websocket stuff
+const messageHandler = new MessageHandler(LAYOUTS[config.get("layout")]); //send message handler current layout
+ipcMain.on("receive-message", (event, {message, index}) => {
+    const order = config.get("clientorder");
+    const swappedIndex = order[index];
+    messageHandler.handleRibbonMessage(message, swappedIndex);
+})
+
 function applyLayout() {
     const layoutData = LAYOUTS[config.get("layout")];
+
+    messageHandler.setLayout(layoutData)
 
     if (!layoutData) return;
 
@@ -300,6 +313,13 @@ function swapClients(clientA, clientB) {
     order[clientA] = order[clientB];
     order[clientB] = temp;
 
+    
+
+    //swap stored rooms in messageHandler - should it even be called MessageHandler at this point
+    messageHandler.swapRooms(clientA, clientB);
+    //and swap stored statuses
+    messageHandler.swapStatuses(clientA, clientB);
+
     setClientOrder(order);
 }
 
@@ -315,13 +335,24 @@ ipcMain.on("client-status", (event, status) => {
 
     if (status.ingame) {
         clientsInGame.add(status.client);
+        messageHandler.statuses[status.client] = status;
     } else {
         clientsInGame.delete(status.client);
+        messageHandler.statuses[status.client] = null;
     }
 
     status.client = config.get("clientorder").indexOf(status.client); // real client index
 
     configWin.webContents.send("client-status", status);
+
+    messageHandler.broadcast({
+        index: status.client,
+        message:{
+            command:"multistream.clientstatus",
+            status:status
+        }
+    })
+
 });
 
 ipcMain.on("set-zoom", (event, zoom) => {
@@ -329,6 +360,15 @@ ipcMain.on("set-zoom", (event, zoom) => {
         view.webContents.setZoomFactor(zoom / 100);
     }
 });
+
+ipcMain.on("in-game", (event, inGame) => {
+    messageHandler.broadcast({
+        message:{
+            command:"multistream.ingame",
+            inGame: inGame
+        }
+    })
+})
 
 setInterval(() => {
     if (config.get("smartlayout")) {
@@ -452,3 +492,4 @@ app.whenReady().then(() => {
         setup();
     }
 });
+
