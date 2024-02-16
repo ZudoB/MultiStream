@@ -173,7 +173,21 @@ const {ipcRenderer, contextBridge} = require("electron/renderer");
         }
     });
 
-    const clientStatusObserver = new MutationObserver(() => {
+    const clientStatusObserver = new MutationObserver((mutations) => {
+
+        //https://stackoverflow.com/a/70404535/7657390
+
+        //idk what im doing lmao zudo please help me
+        let ingame = document.body.classList.contains("ingame");
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                //i guess just do this for every mutation?
+                ingame = document.body.classList.contains("ingame")
+            }
+        });
+        
+        
+        //back to zudo code
         const entries = document.querySelectorAll("#room_players .scroller_player:not(.spectator)");
         const p1 = entries[0]?.dataset.username;
         const p2 = entries[1]?.dataset.username;
@@ -186,7 +200,7 @@ const {ipcRenderer, contextBridge} = require("electron/renderer");
             p1,
             p2,
             players: entries.length,
-            ingame: document.body.classList.contains("ingame")
+            ingame
         });
 
         // todo: this ought to be somewhere else
@@ -263,8 +277,7 @@ const {ipcRenderer, contextBridge} = require("electron/renderer");
         });
 
         clientStatusObserver.observe(document.body, {
-            attributes: true,
-            attributeFilter: ["class"]
+            attributes: true
         });
     }
 })();
