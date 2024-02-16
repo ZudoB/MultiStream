@@ -98,13 +98,13 @@ module.exports = class MessageHandler extends EventEmitter {
         this.statuses.forEach((status, index) => {
             if(!status) return;
             this.broadcast({
-                index,
-                message: {
-                    command: "multistream.clientstatus",
-                    status: status
-                }
-            
-            })
+                    index,
+                    message: {
+                        command: "multistream.clientstatus",
+                        status: status
+                    }
+                
+                })
         })
 
         this.broadcast({
