@@ -97,15 +97,14 @@ module.exports = class MessageHandler extends EventEmitter {
 
         this.statuses.forEach((status, index) => {
             if(!status) return;
-            ws.send(JSON.stringify({
-                data:{
+            this.broadcast({
                     index,
                     message: {
                         command: "multistream.clientstatus",
                         status: status
                     }
-                }
-            }))
+                
+                })
         })
 
         this.broadcast({
