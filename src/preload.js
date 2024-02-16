@@ -1,4 +1,4 @@
-const {ipcRenderer, contextBridge} = require("electron/renderer");
+const {ipcRenderer} = require("electron/renderer");
 
 // window.IS_ELECTRON = true;
 // window.REFRESH_RATE = 30;
@@ -14,10 +14,15 @@ const {ipcRenderer, contextBridge} = require("electron/renderer");
         return;
     }
     
-    contextBridge.exposeInMainWorld("wsmod", {
+    // contextBridge.exposeInMainWorld("wsmod", {
+    //     sendMessage: (message, index) => ipcRenderer.send("send-message", {message, index}),
+    //     receiveMessage: (message, index) => ipcRenderer.send("receive-message", {message, index})
+    // })
+
+    window.wsmod = {
         sendMessage: (message, index) => ipcRenderer.send("send-message", {message, index}),
         receiveMessage: (message, index) => ipcRenderer.send("receive-message", {message, index})
-    })
+    };
     
     function awaitSomething(predicate, callback) {
         let int = setInterval(() => {
@@ -31,6 +36,7 @@ const {ipcRenderer, contextBridge} = require("electron/renderer");
     const client = parseInt(usp.get("__multistream_client_index"));
 
     const getConfig = key => ipcRenderer.sendSync("get-config", key);
+
 
     const CONFIG = {
         "controls": {
@@ -190,10 +196,12 @@ const {ipcRenderer, contextBridge} = require("electron/renderer");
         });
 
         // todo: this ought to be somewhere else
-        window.PIXI.Ticker.shared.maxFPS = getConfig("framerate");
+        if (window.PIXI?.Ticker) {
+            window.PIXI.Ticker.shared.maxFPS = getConfig("framerate");
+        }
     });
 
-    
+    console.log("meow!!!!");
 
     ipcRenderer.send("client-status", {
         client,
@@ -201,7 +209,7 @@ const {ipcRenderer, contextBridge} = require("electron/renderer");
     });
 
     if (getConfig("nospecbar")) {
-        awaitSomething(() => document.getElementById("menus") && !document.getElementById("menus").classList.contains("hidden"), () => {
+        awaitSomething(() => document.getElementById("menus") && !document.getElementById("menus").classList.contains("hidden") && "DEVHOOK_DISABLE_SPECTATOR_TOOLS" in window, () => {
             window.DEVHOOK_DISABLE_SPECTATOR_TOOLS();
         });
     }

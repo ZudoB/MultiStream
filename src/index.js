@@ -42,7 +42,7 @@ function createView(index) {
             nodeIntegration: false,
             nodeIntegrationInSubFrames: false,
             enableRemoteModule: false,
-            contextIsolation: true,
+            contextIsolation: false,
             backgroundThrottling: false,
             nativeWindowOpen: true,
             disableBlinkFeatures: 'PreloadMediaEngagementData,AutoplayIgnoreWebAudio,MediaEngagementBypassAutoplayPolicies'
