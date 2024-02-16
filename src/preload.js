@@ -182,7 +182,7 @@ const {ipcRenderer, contextBridge} = require("electron/renderer");
 
         ipcRenderer.send("client-status", {
             client,
-            roomid,
+            roomid: document.body.classList.contains("innormalmulti") ? roomid : null,
             p1,
             p2,
             players: entries.length,
