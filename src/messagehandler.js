@@ -94,6 +94,20 @@ module.exports = class MessageHandler extends EventEmitter {
 
     setLayout(layout){
         this.layout = layout;
+
+        this.statuses.forEach((status, index) => {
+            if(!status) return;
+            ws.send(JSON.stringify({
+                data:{
+                    index,
+                    message: {
+                        command: "multistream.clientstatus",
+                        status: status
+                    }
+                }
+            }))
+        })
+
         this.broadcast({
             message: {
                 command: 'multistream.layout',
