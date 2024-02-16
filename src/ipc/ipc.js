@@ -99,17 +99,13 @@ export function enableIPC(backgroundWin, configWin) {
 	});
 
 	ipcMain.on("client-status", (event, status) => {
-		// if (!configWin || quitting) return; // if we're quitting, chances are the config window is closed
-		//
-		// if (status.ingame) {
-		// 	clientsInGame.add(status.client);
-		// } else {
-		// 	clientsInGame.delete(status.client);
-		// }
-
 		status.client = config.get("clientorder").indexOf(status.client); // real client index
 
-		configWin.webContents.send("client-status", status);
+		try {
+			configWin.webContents.send("client-status", status);
+		} catch {
+			// chances are we're quitting, so drop
+		}
 	});
 
 	ipcMain.on("set-zoom", (event, zoom) => {

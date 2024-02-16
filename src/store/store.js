@@ -24,3 +24,6 @@ export const config = new Store({
 		framerate: 60
 	}
 });
+
+// TODO: temporarily disable smartlayout
+config.set("smartlayout", false);

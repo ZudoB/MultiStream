@@ -29,20 +29,24 @@ export function getClients() {
 }
 
 function setClientSize(view, x, y, width, height) {
-	const [w, h] = backgroundWin.getContentSize();
+	try {
+		const [w, h] = backgroundWin.getContentSize();
 
-	const baseWidth = Math.floor(w / 2);
-	const baseHeight = Math.floor(h / 2);
+		const baseWidth = Math.floor(w / 2);
+		const baseHeight = Math.floor(h / 2);
 
-	const baseX = x * baseWidth;
-	const baseY = y * baseHeight;
+		const baseX = x * baseWidth;
+		const baseY = y * baseHeight;
 
-	view.setBounds({
-		x: baseX,
-		y: baseY,
-		width: baseWidth * width,
-		height: baseHeight * height
-	});
+		view.setBounds({
+			x: baseX,
+			y: baseY,
+			width: baseWidth * width,
+			height: baseHeight * height
+		});
+	} catch {
+		// pass
+	}
 }
 
 function createClients() {
@@ -160,7 +164,7 @@ function setup() {
 		} else {
 			quitting = true;
 			backgroundWin.setClosable(true);
-			for (const {view} of clients) {
+			for (const view of clients) {
 				backgroundWin.removeBrowserView(view);
 			}
 			backgroundWin.close();
