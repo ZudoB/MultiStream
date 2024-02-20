@@ -24,5 +24,10 @@ export function doJSModification(text) {
     // block attempts to set the max fps
     text = text.replaceAll(`PIXI.Ticker.shared.maxFPS=e`, `PIXI.Ticker.shared.redirected_maxFPS=e`);
 
+    // websocket shit
+    text = text.replace(`ws.send(SmartEncode(packet, ws.packr));`, `ws.send(SmartEncode(packet, ws.packr));multistream_ribbonIPC.handleSend(packet);`);
+    text = text.replace(`const msg = SmartDecode(new Uint8Array(ab), this.unpackr);`, `const msg = SmartDecode(new Uint8Array(ab), this.unpackr);multistream_ribbonIPC.handleReceive(msg);`);
+    text = text.replace(`ws.onopen = function(e) {`, `ws.onopen = function(e) { Object.defineProperty(window.MULTISTREAM_HOOKS, "ribbon_PRIVILEGED", {get: () => {return {send: Send, receive: HandleMessage}}});`);
+
     return text;
 }

@@ -1,8 +1,12 @@
 import { dialog, ipcMain, screen } from "electron";
 import { config } from "../store/store.js";
 import { moveWinToDisplay } from "../background/background.js";
-import { LAYOUTS } from "../constants/layouts.js";
-import { applyLayout, getClients, swapClients } from "../app.js";
+import { getClients, setLayout, swapClients, ws } from "../app.js";
+
+
+function getClientIDFromURL(url) {
+	return parseInt(new URL(url).searchParams.get("__multistream_client_index"));
+}
 
 export function enableIPC(backgroundWin, configWin) {
 	ipcMain.on("set-resolution", (event, {width, height, display, framerate}) => {
@@ -89,9 +93,7 @@ export function enableIPC(backgroundWin, configWin) {
 	});
 
 	ipcMain.on("set-layout", (event, layout) => {
-		if (!LAYOUTS[layout]) return;
-		config.set("layout", layout);
-		applyLayout();
+		setLayout(layout);
 	});
 
 	ipcMain.on("swap-clients", (event, {clientA, clientB}) => {
@@ -114,4 +116,11 @@ export function enableIPC(backgroundWin, configWin) {
 		}
 	});
 
+	ipcMain.on("ribbon-send", (event, message) => {
+		ws.handleRibbonSend(getClientIDFromURL(event.sender.getURL()), message);
+	});
+
+	ipcMain.on("ribbon-receive", (event, message) => {
+		ws.handleRibbonReceive(getClientIDFromURL(event.sender.getURL()), message);
+	});
 }

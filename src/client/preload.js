@@ -140,6 +140,13 @@ const {ipcRenderer} = require("electron/renderer");
         window.DEVHOOK_FAST_JOIN_ROOM(room);
     });
 
+    ipcRenderer.on("focus-player", (e, player) => {
+        document.querySelector("#chat_input").value = `/focus ${player}`;
+        document.querySelector("#chat_input").dispatchEvent(new KeyboardEvent("keydown", {
+            code: "Enter"
+        }));
+    });
+
     ipcRenderer.on("load-replay", (e, content) => {
         console.log(content);
         if (content.ismulti) {
@@ -235,6 +242,20 @@ const {ipcRenderer} = require("electron/renderer");
     if (!localStorage.getItem("userConfig")) {
         localStorage.setItem("userConfig", JSON.stringify(CONFIG));
     }
+
+    if (!localStorage.getItem("defaultAnonUsername")) {
+        localStorage.setItem("defaultAnonUsername", `MULTISTREAM${Math.random().toString().substring(2, 7)}`);
+    }
+
+    window.multistream_ribbonIPC = {
+        handleSend(message) {
+            ipcRenderer.send("ribbon-send", message);
+        },
+
+        handleReceive(message) {
+            ipcRenderer.send("ribbon-receive", message);
+        }
+    };
 
     window.onload = () => {
         if (getConfig("transparent")) document.documentElement.style.backgroundColor = "transparent";

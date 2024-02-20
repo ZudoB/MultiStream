@@ -5,6 +5,7 @@ import { enableIPC } from "./ipc/ipc.js";
 import { createClient } from "./client/client.js";
 import { config } from "./store/store.js";
 import { LAYOUTS } from "./constants/layouts.js";
+import { WebsocketServer } from "./ws/WebsocketServer.js";
 
 app.commandLine.appendSwitch('--disable-gpu-sandbox');
 app.commandLine.appendSwitch('--enable-webgl2-compute-context');
@@ -23,6 +24,8 @@ let quitting = false;
 
 const baseClients = []; // FIXED index
 let clients = []; // user defined index
+
+export const ws = new WebsocketServer();
 
 export function getClients() {
 	return clients;
@@ -74,6 +77,13 @@ export function applyLayout() {
 		setClientSize(clients[i], ...layoutData[i]);
 	}
 
+	ws.broadcast("multistream:layout", null, {layout: config.get("layout")});
+}
+
+export function setLayout(layout) {
+	if (!LAYOUTS[layout]) return;
+	config.set("layout", layout);
+	applyLayout();
 }
 
 export function setClientOrder(order) {
