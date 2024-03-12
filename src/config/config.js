@@ -2,13 +2,17 @@ import { BrowserWindow, shell, Menu } from "electron";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
+import packageJson from "../../package.json" assert {type: "json"};
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const version = packageJson.version;
 
 export function createConfigWindow() {
 	const win = new BrowserWindow({
 		width: 800,
 		height: 800,
-		title: "MultiStream Config",
+		title: `MultiStream v${version} - Configuration`,
 		resizable: false,
 		maximizable: false,
 		show: false,
@@ -24,6 +28,10 @@ export function createConfigWindow() {
 		{
 			label: "MultiStream",
 			submenu: [
+				{
+					label: `MultiStream v${version}`,
+					enabled: false
+				},
 				{
 					label: "About MultiStream",
 					click: () => shell.openExternal("https://zudo.space/multistream")

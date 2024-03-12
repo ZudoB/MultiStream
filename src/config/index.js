@@ -192,17 +192,19 @@ config.onClientStatus(status => {
 	// }
 });
 
+const HOTKEY = "Shift";
+
 function disableDangerButtons(s) {
 	document.querySelectorAll("[data-danger]").forEach(el => el.disabled = s);
 }
 window.addEventListener("keydown", e => {
-	if (e.key === "Alt") {
+	if (e.key === HOTKEY) {
 		disableDangerButtons(false);
 	}
 });
 
 window.addEventListener("keyup", e => {
-	if (e.key === "Alt") {
+	if (e.key === HOTKEY) {
 		disableDangerButtons(true);
 	}
 });

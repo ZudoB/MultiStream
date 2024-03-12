@@ -3,11 +3,7 @@ import { join, dirname } from "path";
 import { config } from "../store/store.js";
 import { fileURLToPath } from "url";
 
-import packageJson from "../../package.json" assert {type: "json"};
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-const version = packageJson.version;
 
 export function moveWinToDisplay(window, display, width, height) {
 	window.setResizable(true);
@@ -31,7 +27,7 @@ export function createBackgroundWindow() {
 		minimizable: false,
 		closable: false,
 		transparent: true,
-		title: `MultiStream v${version}`,
+		title: `MultiStream`,
 		center: true,
 		frame: config.get("frame"),
 		show: false

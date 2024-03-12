@@ -280,6 +280,7 @@ const { ipcRenderer } = require("electron/renderer");
 		document.getElementById("multi_league").style.display = "none"; // prevent silliness
 		document.getElementById("play_solo").style.display = "none";
 		document.getElementById("footer_buttons").style.display = "none";
+		document.getElementById("homebanner").style.display = "none";
 
 		autoDownloadObserver.observe(document.getElementById("victoryview"), {
 			attributes: true,
