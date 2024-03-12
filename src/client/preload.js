@@ -150,7 +150,6 @@ const { ipcRenderer } = require("electron/renderer");
 	});
 
 	ipcRenderer.on("load-replay", (e, content) => {
-		console.log(content);
 		if (content.ismulti) {
 			window.MULTISTREAM_HOOKS.game.showMultiLog(content);
 			return;

@@ -111,8 +111,6 @@ export function swapClients(clientA, clientB) {
 	order[indexA][1] = order[indexB][1];
 	order[indexB][1] = temp;
 
-	console.log(order);
-
 	setClientOrder(order);
 }
 
@@ -126,7 +124,6 @@ export function setLeftSideUser(client, user) {
 }
 
 export function getLeftSideUser(client) {
-	// console.log(leftSideUsers);
 	return leftSideUsers.get(client);
 }
 

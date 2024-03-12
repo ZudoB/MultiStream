@@ -158,7 +158,7 @@ document.querySelectorAll("[data-swap-left]").forEach(el => {
 });
 
 config.onClientStatus(status => {
-	const row = document.querySelector("#client-status").children[status.client];
+	const row = document.querySelector(`[data-client-status=${status.client}]`);
 
 	row.querySelector("[data-client-status-item=roomid]").innerText = status.roomid || "None";
 	row.querySelector("[data-client-status-item=playercount]").innerText = status.players;
