@@ -77,7 +77,6 @@ export function applyLayout() {
 
 	for (const layout in layoutData) {
 		if (!layoutData.hasOwnProperty(layout)) continue;
-		console.log(layoutData[layout]);
 		setClientSize(getClientByLetter(layout), ...layoutData[layout]);
 	}
 
@@ -189,7 +188,7 @@ function setup() {
 		} else {
 			quitting = true;
 			backgroundWin.setClosable(true);
-			for (const view of clients) {
+			for (const view of getClients()) {
 				backgroundWin.removeBrowserView(view);
 			}
 			backgroundWin.close();

@@ -267,7 +267,6 @@ const { ipcRenderer } = require("electron/renderer");
 
 	window.MULTISTREAM_HOOKS.reorderPlayers = list => {
 		const leftSideUser = ipcRenderer.sendSync("get-left-side-user", client);
-		console.log("reorderPlayers", list);
 		return list.sort((a, b) => {
 			if (a.userid === leftSideUser) return -1;
 			if (b.userid === leftSideUser) return 1;
