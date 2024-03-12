@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld("config", {
     setResolution: (width, height, display, framerate) => ipcRenderer.send("set-resolution", {width, height, display, framerate}),
     joinRoom: (client, room) => ipcRenderer.send("join-room", {client, room}),
     reloadClient: client => ipcRenderer.send("reload-client", client),
+    killClient: client => ipcRenderer.send("kill-client", client),
     selectReplayDir: () => {
         return new Promise(resolve => {
             ipcRenderer.once("save-folder-set", (e, dir) => resolve(dir));
@@ -17,5 +18,7 @@ contextBridge.exposeInMainWorld("config", {
     setLayout: layout => ipcRenderer.send("set-layout", layout),
     swapClients: (clientA, clientB) => ipcRenderer.send("swap-clients", {clientA, clientB}),
     onClientStatus: callback => ipcRenderer.on("client-status", (e, status) => callback(status)),
+    getLeftSideUser: client => ipcRenderer.sendSync("get-left-side-user", client),
+    setLeftSideUser: (client, user) => ipcRenderer.send("set-left-side-user", {client, user}),
     setZoom: zoom => ipcRenderer.send("set-zoom", zoom),
 })

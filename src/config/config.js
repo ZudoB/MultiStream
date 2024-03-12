@@ -6,7 +6,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export function createConfigWindow() {
 	const win = new BrowserWindow({
-		width: 600,
+		width: 800,
 		height: 800,
 		title: "MultiStream Config",
 		resizable: false,

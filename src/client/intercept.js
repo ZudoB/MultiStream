@@ -16,18 +16,18 @@ function exposeObfuscatedObject(js, regexReference, usage, name) {
 
 
 export function doJSModification(text) {
-    text = `window.MULTISTREAM_HOOKS={};` + text;
-
     // expose multiplayer replay hook (among others)
     text = exposeObfuscatedObject(text, /(\w+)\.showMultiLog/, "window.DEVHOOK_LOAD_REPLAY_RAW", "game");
 
     // block attempts to set the max fps
     text = text.replaceAll(`PIXI.Ticker.shared.maxFPS=e`, `PIXI.Ticker.shared.redirected_maxFPS=e`);
 
+    // force player order
+    text = text.replaceAll(`this._ready=this._Load(t)`, `t = MULTISTREAM_HOOKS.reorderPlayers(t), this._ready = this._Load(t)`);
+
     // websocket shit
     text = text.replace(`ws.send(SmartEncode(packet, ws.packr));`, `ws.send(SmartEncode(packet, ws.packr));multistream_ribbonIPC.handleSend(packet);`);
     text = text.replace(`const msg = SmartDecode(new Uint8Array(ab), this.unpackr);`, `const msg = SmartDecode(new Uint8Array(ab), this.unpackr);multistream_ribbonIPC.handleReceive(msg);`);
-    text = text.replace(`ws.onopen = function(e) {`, `ws.onopen = function(e) { Object.defineProperty(window.MULTISTREAM_HOOKS, "ribbon_PRIVILEGED", {get: () => {return {send: Send, receive: HandleMessage}}});`);
 
     return text;
 }

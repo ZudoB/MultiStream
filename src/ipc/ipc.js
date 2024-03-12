@@ -1,7 +1,7 @@
 import { dialog, ipcMain, screen } from "electron";
 import { config } from "../store/store.js";
 import { moveWinToDisplay } from "../background/background.js";
-import { getClients, setLayout, swapClients, ws } from "../app.js";
+import { getClientByLetter, getClients, getLeftSideUser, setLayout, setLeftSideUser, swapClients, ws } from "../app.js";
 
 
 function getClientIDFromURL(url) {
@@ -26,15 +26,9 @@ export function enableIPC(backgroundWin, configWin) {
 
 	ipcMain.on("join-room", (event, {client, room}) => {
 		if (!room) return;
-		const index = parseInt(client) || 0;
 
-		const clients = getClients();
-
-		if (index >= clients.length) {
-			return dialog.showErrorBox("No such client", "You don't have enough active clients.");
-		}
-
-		clients[index].webContents.send("join-room", room);
+		const c = getClientByLetter(client);
+		c.webContents.send("join-room", room);
 	});
 
 	ipcMain.on("reload-client", (event, client) => {
@@ -46,7 +40,20 @@ export function enableIPC(backgroundWin, configWin) {
 			return dialog.showErrorBox("No such client", "You don't have enough active clients.");
 		}
 
-		clients[index].webContents.reloadIgnoringCache();
+		clients[index].webContents.loadURL(`https://tetr.io/?__multistream_client_index=${index}`);
+	});
+
+	ipcMain.on("kill-client", async (event, client) => {
+		const index = parseInt(client) || 0;
+
+		const clients = getClients();
+
+		if (index >= clients.length) {
+			return dialog.showErrorBox("No such client", "You don't have enough active clients.");
+		}
+
+		await clients[index].webContents.loadURL(`about:blank`);
+		configWin.webContents.send("client-status", {client: index, dead: true});
 	});
 
 	ipcMain.on("set-save-folder", async event => {
@@ -103,11 +110,30 @@ export function enableIPC(backgroundWin, configWin) {
 	ipcMain.on("client-status", (event, status) => {
 		status.client = config.get("clientorder").indexOf(status.client); // real client index
 
+		// pick a left side user
+		const currentLeftUser = getLeftSideUser(status.client);
+
+		if (!currentLeftUser || (currentLeftUser !== status.p1?.userid && currentLeftUser !== status.p2?.userid)) {
+			setLeftSideUser(status.client, status.p1?.userid);
+		}
+
 		try {
 			configWin.webContents.send("client-status", status);
 		} catch {
 			// chances are we're quitting, so drop
 		}
+	});
+
+	ipcMain.on("get-left-side-user", (event, client) => {
+		event.returnValue = getLeftSideUser(client);
+	});
+
+	ipcMain.on("set-left-side-user", (event, {client, user}) => {
+		const index = parseInt(client) || 0;
+		const clients = getClients();
+
+		setLeftSideUser(client, user);
+		clients[index].webContents.send("request-status");
 	});
 
 	ipcMain.on("set-zoom", (event, zoom) => {

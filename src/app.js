@@ -7,15 +7,15 @@ import { config } from "./store/store.js";
 import { LAYOUTS } from "./constants/layouts.js";
 import { WebsocketServer } from "./ws/WebsocketServer.js";
 
-app.commandLine.appendSwitch('--disable-gpu-sandbox');
-app.commandLine.appendSwitch('--enable-webgl2-compute-context');
-app.commandLine.appendSwitch('--lang', 'en-US');
-app.commandLine.appendSwitch('--no-sandbox');
-app.commandLine.appendSwitch('--force-discrete-gpu', '1');
-app.commandLine.appendSwitch('--enable-high-resolution-time');
-app.commandLine.appendSwitch('--enable-zero-copy');
-app.commandLine.appendSwitch('--ignore-gpu-blacklist');
-app.commandLine.appendSwitch('--autoplay-policy', 'no-user-gesture-required');
+app.commandLine.appendSwitch("--disable-gpu-sandbox");
+app.commandLine.appendSwitch("--enable-webgl2-compute-context");
+app.commandLine.appendSwitch("--lang", "en-US");
+app.commandLine.appendSwitch("--no-sandbox");
+app.commandLine.appendSwitch("--force-discrete-gpu", "1");
+app.commandLine.appendSwitch("--enable-high-resolution-time");
+app.commandLine.appendSwitch("--enable-zero-copy");
+app.commandLine.appendSwitch("--ignore-gpu-blacklist");
+app.commandLine.appendSwitch("--autoplay-policy", "no-user-gesture-required");
 
 let backgroundWin;
 let configWin;
@@ -23,12 +23,16 @@ let configWin;
 let quitting = false;
 
 const baseClients = []; // FIXED index
-let clients = []; // user defined index
 
 export const ws = new WebsocketServer();
 
 export function getClients() {
-	return clients;
+	return baseClients;
+}
+
+export function getClientByLetter(letter) {
+	const client = new Map(config.get("clientorder")).get(letter);
+	return baseClients[client];
 }
 
 function setClientSize(view, x, y, width, height) {
@@ -53,31 +57,37 @@ function setClientSize(view, x, y, width, height) {
 }
 
 function createClients() {
-	const clientorder = config.get("clientorder");
 	for (let i = 0; i < 4; i++) {
 		const view = createClient(i);
 		setClientSize(view, i % 2, Math.floor(i / 2), 1, 1);
 		backgroundWin.addBrowserView(view);
 		baseClients[i] = view;
-		clients[clientorder[i]] = view;
 	}
 }
-//
+
+
 export function applyLayout() {
 	const layoutData = LAYOUTS[config.get("layout")];
 
 	if (!layoutData) return;
 
-	for (const view of clients) {
-		view.setBounds({x: 0, y: 0, width: 0, height: 0});
+	for (const view of baseClients) {
+		view.setBounds({ x: 0, y: 0, width: 0, height: 0 });
 	}
 
-	for (let i = 0; i < layoutData.length; i++) {
-		if (!clients[i]) break;
-		setClientSize(clients[i], ...layoutData[i]);
+	for (const layout in layoutData) {
+		if (!layoutData.hasOwnProperty(layout)) continue;
+		console.log(layoutData[layout]);
+		setClientSize(getClientByLetter(layout), ...layoutData[layout]);
 	}
 
-	ws.broadcast("multistream:layout", null, {layout: config.get("layout")});
+	// for (let i = 0; i < layoutData.length; i++) {
+	// 	if (!baseClients[i]) break;
+	//
+	// 	setClientSize(baseClients[i], ...layoutData[i]);
+	// }
+
+	ws.broadcast("multistream:layout", null, { layout: config.get("layout") });
 }
 
 export function setLayout(layout) {
@@ -87,14 +97,6 @@ export function setLayout(layout) {
 }
 
 export function setClientOrder(order) {
-	const newClients = [];
-
-	for (let i = 0; i < order.length; i++) {
-		newClients[i] = baseClients[order[i]];
-	}
-
-	clients = newClients;
-
 	config.set("clientorder", order);
 	applyLayout();
 }
@@ -102,15 +104,31 @@ export function setClientOrder(order) {
 export function swapClients(clientA, clientB) {
 	const order = config.get("clientorder");
 
-	const temp = order[clientA];
-	order[clientA] = order[clientB];
-	order[clientB] = temp;
+	const indexA = order.findIndex(([letter]) => letter === clientA);
+	const indexB = order.findIndex(([letter]) => letter === clientB);
+
+	const temp = order[indexA][1];
+	order[indexA][1] = order[indexB][1];
+	order[indexB][1] = temp;
+
+	console.log(order);
 
 	setClientOrder(order);
 }
 
 
 const clientsInGame = new Set();
+
+const leftSideUsers = new Map();
+
+export function setLeftSideUser(client, user) {
+	leftSideUsers.set(client, user);
+}
+
+export function getLeftSideUser(client) {
+	// console.log(leftSideUsers);
+	return leftSideUsers.get(client);
+}
 
 setInterval(() => {
 	if (config.get("smartlayout")) {
@@ -183,7 +201,7 @@ function setup() {
 	});
 
 	createClients();
-	// applyLayout();
+	applyLayout();
 }
 
 app.whenReady().then(() => {

@@ -1,0 +1,61 @@
+body {
+    font-family: system-ui, sans-serif;
+}
+
+code, textarea, pre {
+    font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+    font-weight: normal;
+}
+
+.mb1 {
+    margin-bottom: 1em;
+}
+
+.layouts {
+    display: flex;
+    justify-content: space-evenly;
+    flex-wrap: wrap;
+}
+
+.layout {
+    display: inline-grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    grid-gap: 2px;
+    width: 6em;
+    height: 4em;
+    padding: 0.5em;
+    user-select: none;
+    cursor: pointer;
+}
+
+/*noinspection CssUnusedSymbol*/
+.layout.active {
+    background-color: #ccc;
+}
+
+.layout > * {
+    border: 1px solid black;
+    border-collapse: collapse;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.layout > .double-height {
+    grid-row: span 2;
+}
+
+.layout > .double-width {
+    grid-column: span 2;
+}
+
+input[type=range] {
+    width: 100%;
+}
+
+.row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
