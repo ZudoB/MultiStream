@@ -1,4 +1,4 @@
-import { BrowserWindow, shell } from "electron";
+import { BrowserWindow, shell, Menu } from "electron";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
@@ -20,13 +20,43 @@ export function createConfigWindow() {
 		}
 	});
 
-	win.setMenuBarVisibility(false);
+	win.setMenu(Menu.buildFromTemplate([
+		{
+			label: "MultiStream",
+			submenu: [
+				{
+					label: "About MultiStream",
+					click: () => shell.openExternal("https://zudo.space/multistream")
+				},
+				{
+					label: "Issue Tracker",
+					click: () => shell.openExternal("https://github.com/ZudoB/multistream/issues")
+				},
+				{
+					label: "Support MultiStream",
+					click: () => shell.openExternal("https://ko-fi.com/zudobtw")
+				},
+				{type: "separator"},
+				{
+					label: "Toggle Developer Tools",
+					role: "toggleDevTools"
+				},
+				{type: "separator"},
+				{
+					label: "Quit",
+					role: "quit",
+					accelerator: process.platform === "darwin" ? "Cmd+Q" : "Ctrl+W"
+				}
+			]
+		}
+	]));
+
 	win.webContents.loadFile(join(__dirname, "index.html"));
 
 	// handle window open by using browser
-	win.webContents.setWindowOpenHandler(({url}) => {
+	win.webContents.setWindowOpenHandler(({ url }) => {
 		shell.openExternal(url);
-		return {action: "deny"};
+		return { action: "deny" };
 	});
 
 	win.on("ready-to-show", () => {
