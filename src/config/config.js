@@ -20,7 +20,6 @@ export function createConfigWindow() {
 			preload: join(__dirname, "preload.js"),
 			nodeIntegration: false,
 			contextIsolation: true,
-			nativeWindowOpen: true
 		}
 	});
 

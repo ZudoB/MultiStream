@@ -200,6 +200,14 @@ function setup() {
 	applyLayout();
 }
 
+export function getConfigWindow() {
+	return configWin;
+}
+
+export function getBackgroundWindow() {
+	return backgroundWin;
+}
+
 app.whenReady().then(() => {
 	if (!app.requestSingleInstanceLock()) {
 		app.quit();

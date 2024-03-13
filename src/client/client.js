@@ -17,7 +17,7 @@ export function createClient(index) {
 			contextIsolation: false,
 			backgroundThrottling: false,
 			nativeWindowOpen: true,
-			disableBlinkFeatures: 'PreloadMediaEngagementData,AutoplayIgnoreWebAudio,MediaEngagementBypassAutoplayPolicies'
+			disableBlinkFeatures: 'PreloadMediaEngagementData,AutoplayIgnoreWebAudio,MediaEngagementBypassAutoplayPolicies',
 		}
 	});
 
@@ -79,12 +79,6 @@ export function createClient(index) {
 		if (config.get("nointercept")) return callback({cancel: false});
 		callback({redirectURL: "multistream://tetrio.js"});
 	});
-
-
-
-	function setSize(x, y, width, height) {
-
-	}
 
 	return view;
 }

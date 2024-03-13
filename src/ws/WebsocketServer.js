@@ -1,6 +1,7 @@
 import { WebSocketServer } from "ws";
 import { convertLeaderboardToScore } from "./helpers.js";
 import { getClients, setLayout } from "../app.js";
+import { config } from "../store/store.js";
 
 export class WebsocketServer {
 
@@ -8,32 +9,44 @@ export class WebsocketServer {
 	constructor() {
 		this.wsClients = new Set();
 
+		this.statuses = new Map();
+
 		this.setup();
 	}
 
 	async setup() {
 		await this.startServer();
-		this.server.on("connection", client => {
-			this.wsClients.add(client);
 
-			client.on("message", message => {
+		this.server.on("connection", ws => {
+			this.wsClients.add(ws);
+
+			this.send(ws, "multistream:layout", null, { layout: config.get("layout") });
+			for (const [client, status] of this.statuses) {
+				this.send(ws, "client:status", client, status);
+			}
+
+			ws.on("message", message => {
 				try {
 					this.onMessage(JSON.parse(message));
 				} catch (e) {
 					console.error(e);
-					client.close();
+					ws.close();
 				}
 			});
 
-			client.on("close", () => {
-				this.wsClients.delete(client);
+			ws.on("close", () => {
+				this.wsClients.delete(ws);
 			});
 		});
 	}
 
+	send(ws, type, client, data) {
+		ws.send(JSON.stringify({ type, client, data }));
+	}
+
 	broadcast(type, client, data) {
 		for (const wsClient of this.wsClients.values()) {
-			wsClient.send(JSON.stringify({ type, client: client, data }));
+			this.send(wsClient, type, client, data);
 		}
 	}
 
@@ -44,10 +57,8 @@ export class WebsocketServer {
 			client = getClients()[message.client];
 		}
 
-		console.log(message, client);
-
 		switch (message.type) {
-			case "client:join-room":
+			case "room:join":
 				client?.webContents.send("join-room", message.data);
 				break;
 			case "client:focus-player":
@@ -96,6 +107,8 @@ export class WebsocketServer {
 	convertRibbonMessage(message) {
 		if (message.command !== "X-MUL") {
 			return [message];
+		} else if (message.command === "hello") {
+			return [message, ...message.packets];
 		} else {
 			return message.items;
 		}
@@ -107,31 +120,38 @@ export class WebsocketServer {
 
 	handleRibbonReceive(clientID, message) {
 		const messages = this.convertRibbonMessage(message);
-		// todo: client id needs to be reconciled with the layout
+
+		const clientLetter = config.get("clientorder").find(([, index]) => index === clientID)[0];
 
 		for (const message of messages) {
 			switch (message.command) {
+				case "room.join":
+					this.broadcast("room:join", clientLetter, message.data);
+					break;
+				case "room.leave":
+					this.broadcast("room:leave", clientLetter, {});
+					break;
 				case "game.ready":
-					this.broadcast("game:start", clientID, { newGame: message.data.isNew });
+					this.broadcast("game:start", clientLetter, { newGame: message.data.isNew });
 					break;
 				case "game.end":
-					this.broadcast("game:end", clientID, {
+					this.broadcast("game:end", clientLetter, {
 						reason: "finish",
 						scores: message.data.leaderboard.map(convertLeaderboardToScore)
 					});
 					break;
 				case "game.abort":
-					this.broadcast("game:end", clientID, {
+					this.broadcast("game:end", clientLetter, {
 						reason: "abort",
 						scores: null
 					});
 					break;
 				case "game.spectate":
-					this.broadcast("game:spectate", clientID, {});
+					this.broadcast("game:spectate", clientLetter, {});
 					break;
 				case "game.match":
 				case "game.score":
-					this.broadcast("game:score", clientID, {
+					this.broadcast("game:score", clientLetter, {
 						ft: message.data.refereedata.ft,
 						wb: message.data.refereedata.wb,
 						// winner: message.data.victor,
@@ -139,10 +159,15 @@ export class WebsocketServer {
 					});
 					break;
 				case "game.advance":
-					this.broadcast("game:round-end", clientID, {
+					this.broadcast("game:round-end", clientLetter, {
 						scores: message.data.currentboard.map(convertLeaderboardToScore)
 					});
 			}
 		}
+	}
+
+	handleClientStatus(status) {
+		this.statuses.set(status.client, status);
+		this.broadcast("client:status", status.client, status);
 	}
 }

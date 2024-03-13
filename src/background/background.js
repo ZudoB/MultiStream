@@ -30,9 +30,8 @@ export function createBackgroundWindow() {
 		title: `MultiStream`,
 		center: true,
 		frame: config.get("frame"),
-		show: false
+		show: false,
 	});
-
 
 	win.setMenu(null);
 	win.webContents.loadFile(join(__dirname, "index.html"));

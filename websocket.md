@@ -18,7 +18,7 @@ A scoreboard entry for a player.
 Events take the form of a JSON object with the following fields:
 
 * `type` (string) - The type of event.
-* `client` (int?) - The client the event is referring to.
+* `client` (int?) - The client the event is referring to ("a" through "d").
 * `data` (any?) - Optional data for the event, see each type for details.
 
 ### `game:start`
@@ -59,6 +59,17 @@ Fired when the client layout changes.
 * `data`
   * `layout` (string) - The new layout. One of `1x1`, `2x1`, `1x2`, `2x2`, `1L-2R`, `2L-1R`, `1T-2B`, `2T-1B`.
 
+### `room:join`
+
+Fired when a client joins a room.
+
+* `data`
+  * `id` (string) - The room code the client joined.
+
+### `room:leave`
+
+Fired when a client leaves a room.
+
 ## Commands
 
 MultiStream can be controlled by sending a JSON object with the following fields:
@@ -73,7 +84,7 @@ While in-game, spectate a particular player. Equivalent to `/focus [playername]`
 
 * `data` (string) - The **username** of the player to focus.
 
-### `client:join-room`
+### `room:join`
 
 Join a room with a code.
 

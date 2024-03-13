@@ -1,15 +1,23 @@
 import { dialog, ipcMain, screen } from "electron";
 import { config } from "../store/store.js";
 import { moveWinToDisplay } from "../background/background.js";
-import { getClientByLetter, getClients, getLeftSideUser, setLayout, setLeftSideUser, swapClients, ws } from "../app.js";
-
-
+import {
+	getBackgroundWindow,
+	getClientByLetter,
+	getClients,
+	getConfigWindow,
+	getLeftSideUser,
+	setLayout,
+	setLeftSideUser,
+	swapClients,
+	ws
+} from "../app.js";
 function getClientIDFromURL(url) {
 	return parseInt(new URL(url).searchParams.get("__multistream_client_index"));
 }
 
 export function enableIPC(backgroundWin, configWin) {
-	ipcMain.on("set-resolution", (event, {width, height, display, framerate}) => {
+	ipcMain.on("set-resolution", (event, { width, height, display, framerate }) => {
 		if (!width || !height) return;
 
 		moveWinToDisplay(backgroundWin, display, width, height);
@@ -24,7 +32,7 @@ export function enableIPC(backgroundWin, configWin) {
 		}
 	});
 
-	ipcMain.on("join-room", (event, {client, room}) => {
+	ipcMain.on("join-room", (event, { client, room }) => {
 		if (!room) return;
 
 		const c = getClientByLetter(client);
@@ -37,6 +45,8 @@ export function enableIPC(backgroundWin, configWin) {
 
 		const index = config.get("clientorder").find(([letter]) => letter === client)[1];
 
+		getBackgroundWindow().once("focus", () => getConfigWindow().focus());
+
 		await c.webContents.loadURL(`https://tetr.io/?__multistream_client_index=${index}`);
 		c.webContents.send("request-status");
 	});
@@ -44,8 +54,10 @@ export function enableIPC(backgroundWin, configWin) {
 	ipcMain.on("kill-client", async (event, client) => {
 		const c = getClientByLetter(client);
 
-		await c.webContents.loadURL(`about:blank`);
-		configWin.webContents.send("client-status", {client, dead: true, players: 0});
+		getBackgroundWindow().once("focus", () => getConfigWindow().focus());
+
+		await c.webContents.loadURL("about:blank");
+		configWin.webContents.send("client-status", { client, dead: true, players: 0 });
 	});
 
 	ipcMain.on("set-save-folder", async event => {
@@ -65,7 +77,7 @@ export function enableIPC(backgroundWin, configWin) {
 		event.returnValue = config.get(key);
 	});
 
-	ipcMain.on("set-config", (event, {key, value}) => {
+	ipcMain.on("set-config", (event, { key, value }) => {
 		config.set(key, value);
 	});
 
@@ -74,12 +86,12 @@ export function enableIPC(backgroundWin, configWin) {
 			return {
 				id: display.id,
 				label: display.label,
-				bounds: display.bounds,
+				bounds: display.bounds
 			};
 		});
 	});
 
-	ipcMain.on("load-replay", (event, {client, content}) => {
+	ipcMain.on("load-replay", (event, { client, content }) => {
 		const c = getClientByLetter(client);
 
 		c.webContents.send("load-replay", content);
@@ -90,7 +102,7 @@ export function enableIPC(backgroundWin, configWin) {
 		setLayout(layout);
 	});
 
-	ipcMain.on("swap-clients", (event, {clientA, clientB}) => {
+	ipcMain.on("swap-clients", (event, { clientA, clientB }) => {
 		swapClients(clientA, clientB);
 
 		getClientByLetter(clientA).webContents.send("request-status");
@@ -109,6 +121,7 @@ export function enableIPC(backgroundWin, configWin) {
 
 		try {
 			configWin.webContents.send("client-status", status);
+			ws.handleClientStatus(status);
 		} catch {
 			// chances are we're quitting, so drop
 		}
@@ -118,7 +131,7 @@ export function enableIPC(backgroundWin, configWin) {
 		event.returnValue = getLeftSideUser(client);
 	});
 
-	ipcMain.on("set-left-side-user", (event, {client, user}) => {
+	ipcMain.on("set-left-side-user", (event, { client, user }) => {
 		const c = getClientByLetter(client);
 
 		setLeftSideUser(client, user);
