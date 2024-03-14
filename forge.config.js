@@ -1,6 +1,7 @@
-module.exports = {
+export default {
     packagerConfig: {
         asar: true,
+        ignore: [".idea"]
     },
     rebuildConfig: {},
     makers: [
