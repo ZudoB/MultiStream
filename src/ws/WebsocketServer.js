@@ -62,8 +62,6 @@ export class WebsocketServer {
 			clientLetter = message.client;
 		}
 
-		console.log(clientLetter);
-
 		switch (message.type) {
 			case "room:join":
 				client?.webContents.send("join-room", message.data);

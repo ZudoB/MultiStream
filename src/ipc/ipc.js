@@ -128,7 +128,6 @@ export function enableIPC(backgroundWin, configWin) {
 
 		if (!currentLeftUser || (currentLeftUser !== status.p1?.userid && currentLeftUser !== status.p2?.userid)) {
 			setLeftSideUser(status.client, status.p1?.userid);
-			console.log("setting left side user to ", status.p1?.userid);
 		}
 
 		try {
