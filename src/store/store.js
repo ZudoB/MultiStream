@@ -32,7 +32,7 @@ export const config = new Store({
 	migrations: {
 		"2.0.0": store => {
 			// reset clientorder
-			store.delete("clientorder");
+			store.reset("clientorder");
 		}
 	}
 });

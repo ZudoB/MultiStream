@@ -267,12 +267,25 @@ const { ipcRenderer } = require("electron/renderer");
 
 	window.MULTISTREAM_HOOKS.reorderPlayers = list => {
 		const leftSideUser = ipcRenderer.sendSync("get-left-side-user", client);
+
 		return list.sort((a, b) => {
 			if (a.userid === leftSideUser) return -1;
 			if (b.userid === leftSideUser) return 1;
 			return 0;
 		});
 	};
+
+	window.MULTISTREAM_HOOKS.reorderLeaderboard = lb => {
+		const leftSideUser = ipcRenderer.sendSync("get-left-side-user", client);
+		return lb.map(e => {
+			console.log(e);
+			if (e.id === leftSideUser) {
+				e.naturalorder = -99;
+			}
+
+			return e;
+		}).sort((a, b) => a.naturalorder - b.naturalorder);
+	}
 
 	window.onload = () => {
 		if (getConfig("transparent")) document.documentElement.style.backgroundColor = "transparent";

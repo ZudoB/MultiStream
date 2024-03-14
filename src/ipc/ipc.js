@@ -12,6 +12,7 @@ import {
 	swapClients,
 	ws
 } from "../app.js";
+
 function getClientIDFromURL(url) {
 	return parseInt(new URL(url).searchParams.get("__multistream_client_index"));
 }
@@ -36,7 +37,14 @@ export function enableIPC(backgroundWin, configWin) {
 		if (!room) return;
 
 		const c = getClientByLetter(client);
-		c.webContents.send("join-room", room);
+
+		const code = room.trim()
+			.replace("#", "")
+			.replace("https://tetr.io/", "")
+			.replace("tetrio://", "")
+			.toUpperCase();
+
+		c.webContents.send("join-room", code);
 		c.webContents.send("request-status");
 	});
 
@@ -57,7 +65,10 @@ export function enableIPC(backgroundWin, configWin) {
 		getBackgroundWindow().once("focus", () => getConfigWindow().focus());
 
 		await c.webContents.loadURL("about:blank");
-		configWin.webContents.send("client-status", { client, dead: true, players: 0 });
+
+		const status = { client, dead: true, players: 0, roomid: null, ingame: false, p1: null, p2: null };
+		configWin.webContents.send("client-status", status);
+		ws.handleClientStatus(status);
 	});
 
 	ipcMain.on("set-save-folder", async event => {
@@ -117,6 +128,7 @@ export function enableIPC(backgroundWin, configWin) {
 
 		if (!currentLeftUser || (currentLeftUser !== status.p1?.userid && currentLeftUser !== status.p2?.userid)) {
 			setLeftSideUser(status.client, status.p1?.userid);
+			console.log("setting left side user to ", status.p1?.userid);
 		}
 
 		try {
@@ -128,7 +140,13 @@ export function enableIPC(backgroundWin, configWin) {
 	});
 
 	ipcMain.on("get-left-side-user", (event, client) => {
-		event.returnValue = getLeftSideUser(client);
+		let letter = client;
+
+		if (typeof client === "number") { // really janky hack!
+			 letter = config.get("clientorder")?.find(([, index]) => index === client)[0];
+		}
+
+		event.returnValue = getLeftSideUser(letter);
 	});
 
 	ipcMain.on("set-left-side-user", (event, { client, user }) => {

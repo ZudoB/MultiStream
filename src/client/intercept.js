@@ -23,7 +23,9 @@ export function doJSModification(text) {
     text = text.replaceAll(`PIXI.Ticker.shared.maxFPS=e`, `PIXI.Ticker.shared.redirected_maxFPS=e`);
 
     // force player order
-    text = text.replaceAll(`this._ready=this._Load(t)`, `t = MULTISTREAM_HOOKS.reorderPlayers(t), this._ready = this._Load(t)`);
+    text = text.replaceAll(`this._ready=this._Load(t)`, `t = MULTISTREAM_HOOKS.reorderPlayers(t), this._ready = this._Load(t)`); // board order
+    text = text.replaceAll(`_e(s.refereedata,s.leaderboard)`, `_e(s.refereedata,MULTISTREAM_HOOKS.reorderLeaderboard(s.leaderboard))`); // referee layout
+    text = text.replaceAll(`be(e,t,s)`, `be(e,MULTISTREAM_HOOKS.reorderLeaderboard(t),s)`); // scoreslide layout
 
     // websocket shit
     text = text.replace(`ws.send(SmartEncode(packet, ws.packr));`, `ws.send(SmartEncode(packet, ws.packr));multistream_ribbonIPC.handleSend(packet);`);

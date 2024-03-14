@@ -23,7 +23,7 @@ document.querySelector("#resform").addEventListener("submit", e => {
 
 document.querySelectorAll("[data-client-join]").forEach(el => {
 	el.addEventListener("click", () => {
-		config.joinRoom(el.dataset.clientJoin, document.querySelector("#roomcode").value.trim().toUpperCase());
+		config.joinRoom(el.dataset.clientJoin, document.querySelector("#roomcode").value);
 	});
 });
 
