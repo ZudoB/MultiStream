@@ -1,6 +1,6 @@
 import { WebSocketServer } from "ws";
 import { convertLeaderboardToScore } from "./helpers.js";
-import { getClients, setLayout } from "../app.js";
+import { getClients, setLayout, setLeftSideUser } from "../app.js";
 import { config } from "../store/store.js";
 
 export class WebsocketServer {
@@ -52,10 +52,17 @@ export class WebsocketServer {
 
 	onMessage(message) {
 		let client;
+		let clientLetter;
 
 		if (typeof message.client === "number") {
 			client = getClients()[message.client];
+			clientLetter = config.get("clientorder").find(([ index]) => index === message.client)[0];
+		} else if (typeof message.client === "string") {
+			client = getClients().find(c => c.client === message.client);
+			clientLetter = message.client;
 		}
+
+		console.log(clientLetter);
 
 		switch (message.type) {
 			case "room:join":
@@ -63,6 +70,10 @@ export class WebsocketServer {
 				break;
 			case "client:focus-player":
 				client?.webContents.send("focus-player", message.data);
+				break;
+			case "client:set-left-user":
+				setLeftSideUser(clientLetter, message.data);
+				client?.webContents.send("request-status");
 				break;
 			case "multistream:set-layout":
 				setLayout(message.data);
